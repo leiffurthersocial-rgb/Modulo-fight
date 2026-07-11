@@ -15,6 +15,7 @@ interface SettingsState {
   quality: Quality;
   showFps: boolean;
   cameraShake: boolean;
+  showControls: boolean;
 
   setMasterVolume: (v: number) => void;
   setMusicVolume: (v: number) => void;
@@ -23,6 +24,7 @@ interface SettingsState {
   setQuality: (q: Quality) => void;
   setShowFps: (s: boolean) => void;
   setCameraShake: (s: boolean) => void;
+  setShowControls: (s: boolean) => void;
 }
 
 const STORAGE_KEY = 'modulo-fight-settings';
@@ -48,6 +50,7 @@ function persist(state: SettingsState): void {
         quality: state.quality,
         showFps: state.showFps,
         cameraShake: state.cameraShake,
+        showControls: state.showControls,
       }),
     );
   } catch {
@@ -75,6 +78,7 @@ export const useSettings = create<SettingsState>((set, get) => {
     quality: saved.quality ?? 'high',
     showFps: saved.showFps ?? false,
     cameraShake: saved.cameraShake ?? true,
+    showControls: saved.showControls ?? true,
 
     setMasterVolume: (v) => {
       audioManager.setMasterVolume(v);
@@ -106,6 +110,10 @@ export const useSettings = create<SettingsState>((set, get) => {
     },
     setCameraShake: (s) => {
       set({ cameraShake: s });
+      commit();
+    },
+    setShowControls: (s) => {
+      set({ showControls: s });
       commit();
     },
   };

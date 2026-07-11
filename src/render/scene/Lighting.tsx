@@ -5,20 +5,21 @@
 import { useThree } from '@react-three/fiber';
 import { useEffect } from 'react';
 import * as THREE from 'three';
+import type { ArenaTheme } from '@/core/types';
 import type { Quality } from '@/state/settingsStore';
 
 const SHADOW_SIZE: Record<Quality, number> = { low: 0, medium: 1024, high: 2048 };
 
-export function Lighting({ quality }: { quality: Quality }) {
+export function Lighting({ quality, theme }: { quality: Quality; theme: ArenaTheme }) {
   const { scene } = useThree();
 
   useEffect(() => {
-    // Soft blue fog sells the floating-in-sky atmosphere and hides pop-in.
-    scene.fog = new THREE.Fog('#bcd3f2', 34, 78);
+    // Themed fog sells each arena's atmosphere and hides pop-in.
+    scene.fog = new THREE.Fog(theme.fogColor, theme.fogNear, theme.fogFar);
     return () => {
       scene.fog = null;
     };
-  }, [scene]);
+  }, [scene, theme]);
 
   const shadowSize = SHADOW_SIZE[quality];
   const castShadow = shadowSize > 0;

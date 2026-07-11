@@ -20,8 +20,9 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
   space, dodge, combo, recover from off-stage, use specials/ultimates and switch
   targets.
 - **Game modes** — Practice, 1v1, 4-Player FFA, 8-Player FFA.
-- **Sky Temple** arena, fully built; seven more arenas are stubbed and ready to
-  implement.
+- **Eight themed arenas** — Sky Temple, Volcano, Cyber Arena, Forest, Castle,
+  Snow Mountain, Space Station and Construction Site — each with its own layout,
+  colours, fog and decoration set (lava, neon grids, trees, snowfall, stars…).
 - **Modern voxel art** — stylized voxel humans with expressive faces, soft
   shadows, ambient light, bloom, fog and drifting clouds.
 - **Complete audio system** — procedurally synthesised music and SFX behind a
@@ -38,10 +39,10 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
 | Heavy Attack  | `K`         |
 | Special       | `L`         |
 | Ultimate      | `U`         |
-| Dash          | `Ctrl`      |
+| Dash          | `I`         |
 | Dodge         | `H`         |
 | Shield        | `G`         |
-| Pause         | `Esc`       |
+| Pause         | `P` (or `Esc`) |
 
 ## Getting started
 
@@ -113,8 +114,6 @@ TypeScript · React · React Three Fiber · Three.js · @react-three/drei ·
 
 ## Roadmap
 
-- Remaining arenas: Volcano, Cyber Arena, Forest, Castle, Snow Mountain, Space
-  Station, Construction Site (configs already stubbed).
 - Recorded audio + music tracks.
 - Items and stage hazards.
 - Online multiplayer (the input abstraction is already netcode-friendly).

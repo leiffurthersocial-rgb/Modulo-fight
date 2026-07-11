@@ -1,18 +1,16 @@
 /**
- * ArenaView — resolves an arena id to its renderer.
+ * ArenaView — resolves an arena to its renderer.
  *
- * New arenas register their component here. Unimplemented arenas fall back to
- * Sky Temple's geometry so the game is always playable while new stages are in
- * progress.
+ * Every stage is drawn by the single data-driven `ThemedArena`, which reads the
+ * arena's platforms + theme. A per-id override map is kept for any stage that
+ * ever needs fully bespoke geometry beyond the themed system.
  */
 import type { ArenaConfig } from '@/core/types';
-import { SkyTemple } from './SkyTemple';
+import { ThemedArena } from './ThemedArena';
 
-const RENDERERS: Record<string, (props: { arena: ArenaConfig }) => JSX.Element> = {
-  skyTemple: SkyTemple,
-};
+const OVERRIDES: Record<string, (props: { arena: ArenaConfig }) => JSX.Element> = {};
 
 export function ArenaView({ arena }: { arena: ArenaConfig }) {
-  const Renderer = RENDERERS[arena.id] ?? SkyTemple;
+  const Renderer = OVERRIDES[arena.id] ?? ThemedArena;
   return <Renderer arena={arena} />;
 }

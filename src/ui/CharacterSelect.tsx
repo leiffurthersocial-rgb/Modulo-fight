@@ -11,6 +11,8 @@ import { ARENAS } from '@/arenas/arenaData';
 import { FIGHTERS, getFighter } from '@/fighters/fighterData';
 import { useGame } from '@/state/gameStore';
 import { audioManager } from '@/systems/audio/AudioManager';
+import { StatBars } from './StatBars';
+import { ControlsCard } from './Controls';
 
 const MODES: { id: GameMode; label: string }[] = [
   { id: '1v1', label: '1v1' },
@@ -19,17 +21,6 @@ const MODES: { id: GameMode; label: string }[] = [
 ];
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'insane'];
-
-function StatBar({ label, value, max }: { label: string; value: number; max: number }) {
-  return (
-    <div className="stat-row">
-      <span className="stat-name">{label}</span>
-      <span className="stat-bar">
-        <span className="stat-fill" style={{ width: `${Math.min(100, (value / max) * 100)}%` }} />
-      </span>
-    </div>
-  );
-}
 
 export function CharacterSelect() {
   const {
@@ -185,11 +176,7 @@ export function CharacterSelect() {
             <p className="hint" style={{ marginTop: 6 }}>
               {selected.personality}
             </p>
-            <StatBar label="Speed" value={selected.stats.speed} max={8} />
-            <StatBar label="Weight" value={selected.stats.weight} max={1.6} />
-            <StatBar label="Strength" value={selected.stats.strength} max={1.3} />
-            <StatBar label="Jump" value={selected.stats.jumpHeight} max={19} />
-            <StatBar label="KB Resist" value={selected.stats.knockbackResist + 0.05} max={0.4} />
+            <StatBars fighter={selected} />
           </div>
           <div>
             <div className="move-line">
@@ -208,6 +195,11 @@ export function CharacterSelect() {
               <b>Ultimate:</b> {selected.attacks.ultimate.name}
             </div>
           </div>
+        </div>
+
+        <div style={{ marginTop: 22 }}>
+          <span className="field-label">Controls</span>
+          <ControlsCard />
         </div>
 
         <div className="row" style={{ marginTop: 22, justifyContent: 'flex-end' }}>

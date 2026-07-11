@@ -303,6 +303,85 @@ button {
   color: var(--accent);
 }
 
+/* ---- Visual stat bars ---- */
+.statbars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.statbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statbar-label {
+  width: 68px;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.statbar-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.statbar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.statbar-rating {
+  width: 22px;
+  text-align: right;
+  font-weight: 800;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Controls card (menus / pause) ---- */
+.controls-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.controls-group {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.controls-group-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.controls-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: 4px 0;
+}
+
 /* ---- Sliders ---- */
 input[type='range'] {
   -webkit-appearance: none;
@@ -420,6 +499,133 @@ input[type='range']::-moz-range-thumb {
 
 .hud-ult.ready {
   box-shadow: 0 0 10px var(--accent-2);
+}
+
+.hud-fighter.player {
+  border-color: rgba(90, 209, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(90, 209, 255, 0.25);
+}
+
+.hud-fighter.ult-ready {
+  border-color: var(--accent-2);
+  box-shadow:
+    0 0 16px rgba(255, 213, 74, 0.55),
+    inset 0 0 10px rgba(255, 213, 74, 0.15);
+  animation: cardPulse 1s ease-in-out infinite;
+}
+
+@keyframes cardPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 12px rgba(255, 213, 74, 0.4),
+      inset 0 0 8px rgba(255, 213, 74, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 26px rgba(255, 213, 74, 0.85),
+      inset 0 0 14px rgba(255, 213, 74, 0.25);
+  }
+}
+
+.ult-banner {
+  position: absolute;
+  top: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.14em;
+  color: #1a1204;
+  background: linear-gradient(120deg, var(--accent-2), #ff9d3c);
+  box-shadow: 0 0 24px rgba(255, 213, 74, 0.7);
+  animation: bannerPulse 0.9s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+.ult-banner-bolt {
+  font-size: 20px;
+}
+
+.ult-banner-key {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+@keyframes bannerPulse {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+    filter: brightness(1.15);
+  }
+}
+
+/* ---- On-screen controls legend ---- */
+.controls-legend {
+  position: absolute;
+  bottom: 18px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(11, 16, 33, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  font-size: 12px;
+  z-index: 6;
+  transition: opacity 0.3s ease;
+}
+
+.controls-legend .cl-row {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  color: var(--text-dim);
+}
+
+.controls-legend .cl-key {
+  color: var(--accent);
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+}
+
+.controls-legend .cl-title {
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.kbd {
+  display: inline-block;
+  min-width: 20px;
+  text-align: center;
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom-width: 2px;
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .hud-top {

@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { FIGHTER_HALF_HEIGHT } from '@/core/constants';
 import { damp } from '@/core/math';
 import type { FighterRuntime } from '@/systems/simulation/FighterRuntime';
-import { computePose } from './poses';
+import { computePose, deriveAttackStyle, type AttackStyle } from './poses';
 import { VoxelCharacter, type CharacterRefs } from './VoxelCharacter';
 
 interface Props {
@@ -22,6 +22,16 @@ export function FighterView({ runtime }: Props) {
   const root = useRef<THREE.Group>(null!);
   const charRef = useRef<CharacterRefs>(null!);
   const accent = useMemo(() => new THREE.Color(runtime.config.appearance.accent), [runtime]);
+  // Precompute an animation style per attack slot so each move looks distinct.
+  const attackStyles = useMemo<Record<string, AttackStyle>>(() => {
+    const a = runtime.config.attacks;
+    return {
+      light: deriveAttackStyle(a.light),
+      heavy: deriveAttackStyle(a.heavy),
+      special: deriveAttackStyle(a.special),
+      ultimate: deriveAttackStyle(a.ultimate),
+    };
+  }, [runtime]);
   const flashColor = useMemo(() => new THREE.Color('#ffffff'), []);
   const smoothed = useRef({ x: runtime.pos.x, y: runtime.pos.y, facing: 1 });
 
@@ -56,7 +66,15 @@ export function FighterView({ runtime }: Props) {
         (runtime.attack.data.startup + runtime.attack.data.active + runtime.attack.data.recovery)
       : 0;
     const speed = Math.abs(runtime.vel.x);
-    const pose = computePose(runtime.state, runtime.stateTime, speed, attackProgress);
+    const style = runtime.attack ? attackStyles[runtime.attack.data.kind] : 'punch';
+    const pose = computePose(
+      runtime.state,
+      runtime.stateTime,
+      speed,
+      attackProgress,
+      style,
+      runtime.facing,
+    );
 
     c.body.position.y = 0.55 + pose.bodyY;
     c.body.rotation.z = pose.bodyTilt * -runtime.facing;

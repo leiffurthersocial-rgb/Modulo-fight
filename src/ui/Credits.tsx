@@ -3,20 +3,7 @@
  */
 import { FIGHTERS } from '@/fighters/fighterData';
 import { useGame } from '@/state/gameStore';
-
-const CONTROLS: [string, string][] = [
-  ['Move', 'W A S D'],
-  ['Jump / Double Jump', 'Space'],
-  ['Sprint', 'Shift'],
-  ['Light Attack', 'J'],
-  ['Heavy Attack', 'K'],
-  ['Special', 'L'],
-  ['Ultimate', 'U'],
-  ['Dash', 'Ctrl'],
-  ['Dodge', 'H'],
-  ['Shield', 'G'],
-  ['Pause', 'Esc'],
-];
+import { ControlsCard } from './Controls';
 
 export function Credits() {
   const goto = useGame((s) => s.goto);
@@ -44,14 +31,7 @@ export function Credits() {
           </div>
           <div>
             <h2 style={{ fontSize: 18, marginTop: 12 }}>Controls</h2>
-            <div className="controls-grid">
-              {CONTROLS.map(([action, key]) => (
-                <div key={action} className="row spread">
-                  <span>{action}</span>
-                  <span className="k">{key}</span>
-                </div>
-              ))}
-            </div>
+            <ControlsCard />
           </div>
         </div>
 
