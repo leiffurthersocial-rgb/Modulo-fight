@@ -85,6 +85,12 @@ export function Settings() {
             >
               Camera Shake {s.cameraShake ? 'On' : 'Off'}
             </button>
+            <button
+              className={`chip ${s.showControls ? 'active' : ''}`}
+              onClick={() => s.setShowControls(!s.showControls)}
+            >
+              Controls Legend {s.showControls ? 'On' : 'Off'}
+            </button>
           </div>
         </div>
       </div>

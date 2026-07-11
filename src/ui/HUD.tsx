@@ -21,6 +21,9 @@ export function HUD() {
   const showFps = useSettings((s) => s.showFps);
   const timeLimit = useGame((s) => s.timeLimit);
 
+  const player = hud.fighters.find((f) => f.isPlayer);
+  const ultReady = !!player && !player.eliminated && player.ultCharge >= 1;
+
   return (
     <div className="hud">
       {timeLimit > 0 && (
@@ -29,13 +32,25 @@ export function HUD() {
         </div>
       )}
 
+      {/* Prominent notice when the player's ultimate is charged. */}
+      {ultReady && (
+        <div className="ult-banner">
+          <span className="ult-banner-bolt">⚡</span> ULTIMATE READY
+          <span className="ult-banner-key">press U</span>
+        </div>
+      )}
+
       {showFps && <div className="fps">{fps} FPS</div>}
 
       <div className="hud-bottom">
         {hud.fighters.map((f) => {
           const damageColor = `hsl(${Math.max(0, 55 - f.damage * 0.45)}, 90%, ${60 - Math.min(f.damage * 0.12, 22)}%)`;
+          const cardReady = !f.eliminated && f.ultCharge >= 1;
           return (
-            <div key={f.index} className={`hud-fighter ${f.eliminated ? 'out' : ''}`}>
+            <div
+              key={f.index}
+              className={`hud-fighter ${f.eliminated ? 'out' : ''} ${f.isPlayer ? 'player' : ''} ${cardReady ? 'ult-ready' : ''}`}
+            >
               <div className="hud-name">
                 <span className="hud-dot" style={{ background: f.accent }} />
                 {f.name}

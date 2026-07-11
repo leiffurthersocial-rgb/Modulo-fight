@@ -1,13 +1,16 @@
 /**
  * Procedural animation poses.
  *
- * Rather than shipping heavy skeletal animation assets, each fighter is posed
- * procedurally from its simulation state. `computePose` returns limb rotations
- * and body offsets for the current frame, covering every required animation:
- * idle, walk, run, jump, double-jump, fall, land, attacks, hit, knockback,
- * victory and defeat. This is fully deterministic and extremely cheap.
+ * Fighters are posed procedurally from their simulation state — no skeletal
+ * animation assets required. This covers every required animation (idle, walk,
+ * run, jump, double-jump, fall, land, attacks, hit, knockback, victory,
+ * defeat) and is fully deterministic and cheap.
+ *
+ * Attacks are animated by *style* (punch, kick, spin, slam, dive, …) derived
+ * from each move, so a jab, a roundhouse, a ground slam and a divekick all look
+ * distinct — even across the four attack slots and across fighters.
  */
-import type { FighterState } from '@/core/types';
+import type { AttackData, FighterState } from '@/core/types';
 
 export interface Pose {
   bodyY: number;
@@ -22,6 +25,17 @@ export interface Pose {
   squash: number;
 }
 
+export type AttackStyle =
+  | 'punch'
+  | 'kick'
+  | 'spin'
+  | 'slam'
+  | 'dive'
+  | 'barrage'
+  | 'charge'
+  | 'uppercut'
+  | 'lunge';
+
 const IDLE: Pose = {
   bodyY: 0,
   bodyTilt: 0,
@@ -34,137 +48,202 @@ const IDLE: Pose = {
   squash: 1,
 };
 
+/** Map a move to an animation style using its name and category. */
+export function deriveAttackStyle(attack: AttackData): AttackStyle {
+  const n = attack.name.toLowerCase();
+  if (/(kick|dive|kloten|flying|sky)/.test(n)) {
+    return /(dive|kloten|sky|meteor)/.test(n) ? 'dive' : 'kick';
+  }
+  if (/(spin|roundhouse|cyclone|hurricane)/.test(n)) return 'spin';
+  if (/(slam|sledge|earthquake|ground|meteor)/.test(n)) return 'slam';
+  if (/(rapid|punches|barrage|laser)/.test(n)) return 'barrage';
+  if (/(charge)/.test(n)) return 'charge';
+  if (/(rush|golden|dash|strike)/.test(n)) return 'lunge';
+  if (/(cross|uppercut|rising)/.test(n)) return 'uppercut';
+  // Fall back on the attack category.
+  if (attack.kind === 'heavy') return 'uppercut';
+  return 'punch';
+}
+
+/** Pose an attack of a given style. `p` progresses 0→1 over the whole move. */
+function attackPose(style: AttackStyle, p: number, time: number, facing: number): Pose {
+  const o: Pose = { ...IDLE, armLeft: 0, armRight: 0 };
+  const swing = Math.sin(Math.min(p, 1) * Math.PI); // 0→1→0 over the move
+  const wind = Math.min(p / 0.35, 1); // wind-up ramp
+  const strike = Math.max(0, (p - 0.35) / 0.65); // strike ramp
+
+  switch (style) {
+    case 'punch':
+      o.armRight = -1.6 * swing - 0.1;
+      o.armLeft = 0.3 * swing;
+      o.bodyTilt = 0.12 * swing;
+      o.bodyRotY = 0.15 * swing;
+      break;
+    case 'uppercut':
+      o.armRight = -0.3 + wind * 0.8 - strike * 3.0; // scoop up
+      o.armLeft = -0.4 * strike;
+      o.bodyY = strike * 0.15;
+      o.bodyTilt = -0.25 * strike;
+      o.squash = 1 + strike * 0.12;
+      break;
+    case 'kick':
+      o.legRight = -0.3 + wind * 0.5 - strike * 2.2;
+      o.legLeft = 0.3 * strike;
+      o.armLeft = 1.0 * swing;
+      o.armRight = -0.6 * swing;
+      o.bodyTilt = 0.3 * swing;
+      break;
+    case 'spin':
+      o.bodyRotY = p * Math.PI * 2;
+      o.armLeft = 1.7 * Math.sin(p * Math.PI * 2);
+      o.armRight = -1.7 * Math.sin(p * Math.PI * 2);
+      o.legRight = 0.8 * swing;
+      o.bodyTilt = 0.15;
+      break;
+    case 'slam':
+      // Raise both arms overhead, then smash down.
+      o.armLeft = -2.6 * wind + (2.6 - 0.4) * strike;
+      o.armRight = -2.6 * wind + (2.6 - 0.4) * strike;
+      o.bodyY = 0.2 * wind - 0.25 * strike;
+      o.bodyTilt = 0.1 * strike;
+      o.squash = 1 + wind * 0.1 - strike * 0.18;
+      break;
+    case 'dive':
+      // Leap/tuck, then extend into a diving kick.
+      o.legRight = -1.2 * wind + 1.6 * strike;
+      o.legLeft = -1.2 * wind + 0.4 * strike;
+      o.armLeft = -1.8 + strike * 1.0;
+      o.armRight = -1.8 + strike * 1.0;
+      o.bodyTilt = 0.2 + strike * 0.5;
+      o.bodyRotY = strike * Math.PI * 0.4;
+      break;
+    case 'barrage': {
+      // Rapid alternating jabs — fast oscillation across the whole move.
+      const osc = Math.sin(time * 42);
+      o.armRight = -1.4 - osc * 0.35;
+      o.armLeft = -1.4 + osc * 0.35;
+      o.bodyTilt = 0.12;
+      break;
+    }
+    case 'charge':
+      // Big wind-up, held, then one heavy forward drive.
+      o.armRight = -0.2 + wind * 1.0 - strike * 2.4;
+      o.armLeft = 0.4 * wind;
+      o.bodyTilt = -0.3 * wind + 0.4 * strike;
+      o.bodyY = -0.05 * wind;
+      o.squash = 1 + wind * 0.08;
+      break;
+    case 'lunge':
+    default:
+      o.armRight = -1.9 * swing;
+      o.armLeft = -0.5 * swing;
+      o.legLeft = -0.6 * swing;
+      o.legRight = 0.6 * swing;
+      o.bodyTilt = 0.4 * swing;
+      break;
+  }
+  void facing;
+  return o;
+}
+
 export function computePose(
   state: FighterState,
   time: number,
   speed: number,
   attackProgress: number,
+  style: AttackStyle,
+  facing: number,
 ): Pose {
-  const p: Pose = { ...IDLE };
+  // Attack states dispatch to the style-based animator.
+  if (state === 'light' || state === 'heavy' || state === 'special' || state === 'ultimate') {
+    const pose = attackPose(style, attackProgress, time, facing);
+    // Ultimates get extra flourish on top of their style.
+    if (state === 'ultimate') {
+      pose.bodyY += Math.sin(attackProgress * Math.PI) * 0.15;
+      pose.squash = Math.max(pose.squash, 1 + Math.sin(attackProgress * Math.PI) * 0.08);
+    }
+    return pose;
+  }
 
+  const p: Pose = { ...IDLE };
   switch (state) {
-    case 'idle': {
-      // Gentle breathing bob.
+    case 'idle':
       p.bodyY = Math.sin(time * 2.4) * 0.03;
       p.armLeft = 0.15 + Math.sin(time * 2.4) * 0.05;
       p.armRight = -0.15 - Math.sin(time * 2.4) * 0.05;
       p.headTilt = Math.sin(time * 1.6) * 0.04;
       break;
-    }
     case 'walk': {
-      const swing = Math.sin(time * 8) * 0.5;
-      p.armLeft = swing;
-      p.armRight = -swing;
-      p.legLeft = -swing;
-      p.legRight = swing;
+      const s = Math.sin(time * 8) * 0.5;
+      p.armLeft = s;
+      p.armRight = -s;
+      p.legLeft = -s;
+      p.legRight = s;
       p.bodyY = Math.abs(Math.sin(time * 8)) * 0.05;
       break;
     }
     case 'run': {
-      const swing = Math.sin(time * 13) * 0.9;
-      p.armLeft = swing;
-      p.armRight = -swing;
-      p.legLeft = -swing;
-      p.legRight = swing;
+      const s = Math.sin(time * 13) * 0.9;
+      p.armLeft = s;
+      p.armRight = -s;
+      p.legLeft = -s;
+      p.legRight = s;
       p.bodyTilt = 0.22;
       p.bodyY = Math.abs(Math.sin(time * 13)) * 0.08;
       break;
     }
-    case 'jump': {
+    case 'jump':
       p.armLeft = -1.4;
       p.armRight = -1.4;
       p.legLeft = 0.5;
       p.legRight = 0.8;
       p.squash = 1.08;
       break;
-    }
-    case 'doubleJump': {
+    case 'doubleJump':
       p.bodyRotY = Math.min(time * 14, Math.PI * 2);
       p.armLeft = -1.8;
       p.armRight = -1.8;
       p.legLeft = 0.9;
       p.legRight = 0.9;
       break;
-    }
-    case 'fall': {
+    case 'fall':
       p.armLeft = -0.6 + Math.sin(time * 6) * 0.2;
       p.armRight = -0.6 - Math.sin(time * 6) * 0.2;
       p.legLeft = 0.3;
       p.legRight = -0.3;
       break;
-    }
-    case 'land': {
+    case 'land':
       p.squash = 0.82;
       p.legLeft = 0.4;
       p.legRight = 0.4;
       p.armLeft = 0.5;
       p.armRight = -0.5;
       break;
-    }
-    case 'light': {
-      // Quick jab: one arm punches forward on the active window.
-      const punch = Math.sin(Math.min(attackProgress, 1) * Math.PI);
-      p.armRight = -1.5 * punch - 0.1;
-      p.bodyTilt = 0.1 * punch;
-      break;
-    }
-    case 'heavy': {
-      const wind = attackProgress < 0.4 ? attackProgress / 0.4 : 1;
-      const strike = Math.max(0, (attackProgress - 0.4) / 0.6);
-      p.armRight = -0.4 + wind * 0.9 - strike * 2.3;
-      p.bodyTilt = -0.2 * wind + 0.35 * strike;
-      p.armLeft = 0.5 * strike;
-      break;
-    }
-    case 'special': {
-      const spin = Math.sin(attackProgress * Math.PI * 2);
-      p.armLeft = spin * 1.6;
-      p.armRight = -spin * 1.6;
-      p.bodyRotY = attackProgress * Math.PI;
-      p.legRight = 0.6 * Math.sin(attackProgress * Math.PI);
-      break;
-    }
-    case 'ultimate': {
-      // Dramatic wind-up then explosive strike (works for divekicks too).
-      const charge = Math.min(attackProgress * 2, 1);
-      const release = Math.max(0, (attackProgress - 0.5) * 2);
-      p.armLeft = -2 * charge + release * 1.5;
-      p.armRight = -2 * charge + release * 1.5;
-      p.legRight = release * 1.4;
-      p.bodyTilt = -0.3 * charge + 0.5 * release;
-      p.squash = 1 + charge * 0.1;
-      p.bodyRotY = release * Math.PI * 0.5;
-      break;
-    }
-    case 'dash': {
+    case 'dash':
       p.bodyTilt = 0.5;
       p.armLeft = 1.2;
       p.armRight = 1.2;
       p.legLeft = -0.6;
       p.legRight = 0.6;
       break;
-    }
-    case 'dodge': {
+    case 'dodge':
       p.squash = 0.9;
       p.bodyRotY = time * 20;
       p.armLeft = 1;
       p.armRight = 1;
       break;
-    }
-    case 'shield': {
+    case 'shield':
       p.armLeft = -0.9;
       p.armRight = -0.9;
       p.bodyY = -0.05;
       break;
-    }
-    case 'hit': {
+    case 'hit':
       p.bodyTilt = -0.4;
       p.armLeft = -1 + Math.sin(time * 30) * 0.3;
       p.armRight = -1 - Math.sin(time * 30) * 0.3;
       p.headTilt = -0.3;
       break;
-    }
-    case 'knockback': {
+    case 'knockback':
       p.bodyRotY = time * 10;
       p.bodyTilt = -0.6;
       p.armLeft = -1.6;
@@ -172,25 +251,18 @@ export function computePose(
       p.legLeft = -0.8;
       p.legRight = -0.8;
       break;
-    }
-    case 'victory': {
+    case 'victory':
       p.armLeft = -2.4;
       p.armRight = -2.4;
       p.bodyY = Math.abs(Math.sin(time * 4)) * 0.15;
       break;
-    }
-    case 'defeat': {
+    case 'defeat':
       p.bodyTilt = 0.9;
       p.headTilt = 0.4;
       p.armLeft = 0.3;
       p.armRight = 0.3;
       break;
-    }
   }
-
-  // Subtle extra motion scaled by speed for grounded locomotion blends.
-  if ((state === 'walk' || state === 'run') && speed > 0) {
-    p.bodyRotY += 0;
-  }
+  void speed;
   return p;
 }

@@ -27,10 +27,10 @@ interface Props {
 export function GameScene({ sim, quality, cameraShake, beginFrame, endFrame, onFinished }: Props) {
   return (
     <Suspense fallback={null}>
-      {/* Sky gradient background. */}
-      <color attach="background" args={['#aacbf2']} />
+      {/* Themed sky background per arena. */}
+      <color attach="background" args={[sim.config.arena.theme.sky]} />
 
-      <Lighting quality={quality} />
+      <Lighting quality={quality} theme={sim.config.arena.theme} />
       <ArenaView arena={sim.config.arena} />
 
       {sim.fighters.map((f) => (

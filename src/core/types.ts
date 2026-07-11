@@ -160,6 +160,33 @@ export interface BlastZone {
   bottom: number;
 }
 
+/** Decoration set that drives an arena's themed props and ambient effects. */
+export type ArenaDecoration =
+  | 'temple'
+  | 'volcano'
+  | 'cyber'
+  | 'forest'
+  | 'castle'
+  | 'snow'
+  | 'space'
+  | 'construction';
+
+/** Presentation theme for an arena: colours, fog and decoration style. */
+export interface ArenaTheme {
+  /** Background / sky colour. */
+  sky: string;
+  fogColor: string;
+  fogNear: number;
+  fogFar: number;
+  /** Platform surface, side and underside colours. */
+  platformTop: string;
+  platformSide: string;
+  platformUnder: string;
+  /** Accent colour for edges / glows. */
+  accent: string;
+  decoration: ArenaDecoration;
+}
+
 /** Static description of an arena. */
 export interface ArenaConfig {
   id: string;
@@ -171,4 +198,6 @@ export interface ArenaConfig {
   spawns: Vec2[];
   /** Whether this arena is implemented and selectable. */
   implemented: boolean;
+  /** Visual theme. */
+  theme: ArenaTheme;
 }

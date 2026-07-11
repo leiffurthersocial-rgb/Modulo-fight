@@ -20,6 +20,7 @@ import { Simulation } from '@/systems/simulation/Simulation';
 import { GameScene } from '@/render/GameScene';
 import { HUD } from './HUD';
 import { PauseMenu } from './PauseMenu';
+import { ControlsLegend } from './Controls';
 
 export function GameScreen() {
   const selections = useGame((s) => ({
@@ -34,6 +35,7 @@ export function GameScreen() {
   const goto = useGame((s) => s.goto);
   const quality = useSettings((s) => s.quality);
   const cameraShake = useSettings((s) => s.cameraShake);
+  const showControls = useSettings((s) => s.showControls);
 
   const [matchKey, setMatchKey] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -133,6 +135,8 @@ export function GameScreen() {
       </Canvas>
 
       <HUD />
+
+      {showControls && !paused && <ControlsLegend />}
 
       {paused && (
         <PauseMenu

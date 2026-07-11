@@ -8,7 +8,7 @@
  *
  * Default bindings (from the design doc):
  *   Move: WASD · Jump: Space · Sprint: Shift · Light: J · Heavy: K
- *   Special: L · Dash: Ctrl · Pause: Escape
+ *   Special: L · Ultimate: U · Dash: I · Dodge: H · Shield: G · Pause: P
  */
 import { emptyInput, type InputFrame } from './InputState';
 
@@ -40,11 +40,11 @@ export const DEFAULT_BINDINGS: Bindings = {
   light: ['KeyJ'],
   heavy: ['KeyK'],
   special: ['KeyL'],
-  ultimate: ['KeyU', 'KeyO'],
-  dash: ['ControlLeft', 'ControlRight'],
+  ultimate: ['KeyU'],
+  dash: ['KeyI'],
   dodge: ['KeyH'],
   shield: ['KeyG'],
-  pause: ['Escape'],
+  pause: ['KeyP', 'Escape'],
 };
 
 export class KeyboardController {

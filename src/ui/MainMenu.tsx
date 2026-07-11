@@ -43,7 +43,7 @@ export function MainMenu() {
         </button>
       </div>
       <div className="subtitle" style={{ letterSpacing: '0.1em', fontSize: 12 }}>
-        WASD move · Space jump · J/K/L attack · Ctrl dash · Esc pause
+        WASD move · Space jump · J/K/L attack · U ultimate · I dash · P pause
       </div>
     </div>
   );
