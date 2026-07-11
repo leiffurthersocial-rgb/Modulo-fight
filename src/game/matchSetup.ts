@@ -1,9 +1,10 @@
 /**
  * Builds a concrete `MatchConfig` from the player's menu selections.
  *
- * Fills bot slots deterministically from the roster (skipping the player's
- * pick) so every mode always has a full, varied line-up even if the menu only
- * specified some of them.
+ * - 1v1 uses the chosen opponent (or a random one when set to "random"), so the
+ *   duel is never always the same fighter.
+ * - FFA fills bot slots from a shuffled roster (excluding the player) for variety.
+ * - Practice is a two-fighter sandbox with a chosen dummy and chosen stock count.
  */
 import type { Difficulty, GameMode } from '@/core/types';
 import { getArena } from '@/arenas/arenaData';
@@ -19,49 +20,72 @@ export interface MatchSelections {
   difficulty: Difficulty;
   stocks: number;
   timeLimit: number;
+  duelOpponentId: string;
   practiceOpponentId: string;
+  practiceStocks: number;
+}
+
+/** Fisher–Yates shuffle (returns a new array). */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function randomOpponent(excludeId: string): string {
+  const pool = FIGHTERS.map((f) => f.id).filter((id) => id !== excludeId);
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 export function buildMatchConfig(sel: MatchSelections): MatchConfig {
-  const fighters: FighterSetup[] = [
-    { configId: sel.playerFighterId, isPlayer: true, difficulty: 'human' },
-  ];
+  const arena = getArena(sel.arenaId);
+  const player: FighterSetup = {
+    configId: sel.playerFighterId,
+    isPlayer: true,
+    difficulty: 'human',
+  };
 
-  // Practice is a two-fighter sandbox: player + one chosen dummy, no time
-  // limit and effectively unlimited stocks so it never "ends".
+  // --- Practice: two-fighter sandbox -------------------------------------
   if (sel.mode === 'practice') {
-    fighters.push({ configId: sel.practiceOpponentId, isPlayer: false, difficulty: 'easy' });
     return {
       mode: 'practice',
-      arena: getArena(sel.arenaId),
-      fighters,
-      stocks: 99,
+      arena,
+      fighters: [
+        player,
+        { configId: sel.practiceOpponentId, isPlayer: false, difficulty: 'easy' },
+      ],
+      stocks: sel.practiceStocks,
       timeLimit: 0,
     };
   }
 
-  const total = MODE_FIGHTER_COUNT[sel.mode];
-
-  // Preferred bot ids from the menu, then fill from the rest of the roster.
-  const used = new Set<string>([sel.playerFighterId]);
-  const preferred = sel.botFighterIds.filter((id) => !used.has(id));
-  const fallback = FIGHTERS.map((f) => f.id).filter((id) => !used.has(id));
-  const botPool = [...preferred, ...fallback.filter((id) => !preferred.includes(id))];
-
-  let poolIndex = 0;
-  while (fighters.length < total) {
-    const id = botPool[poolIndex % botPool.length];
-    poolIndex += 1;
-    if (used.has(id) && botPool.length >= total) continue;
-    used.add(id);
-    fighters.push({ configId: id, isPlayer: false, difficulty: sel.difficulty });
+  // --- 1v1: chosen (or random) opponent ----------------------------------
+  if (sel.mode === '1v1') {
+    const oppId =
+      sel.duelOpponentId === 'random'
+        ? randomOpponent(sel.playerFighterId)
+        : sel.duelOpponentId;
+    return {
+      mode: '1v1',
+      arena,
+      fighters: [player, { configId: oppId, isPlayer: false, difficulty: sel.difficulty }],
+      stocks: sel.stocks,
+      timeLimit: sel.timeLimit,
+    };
   }
 
-  return {
-    mode: sel.mode,
-    arena: getArena(sel.arenaId),
-    fighters,
-    stocks: sel.stocks,
-    timeLimit: sel.timeLimit,
-  };
+  // --- FFA: shuffled roster fill -----------------------------------------
+  const total = MODE_FIGHTER_COUNT[sel.mode];
+  const pool = shuffle(FIGHTERS.map((f) => f.id).filter((id) => id !== sel.playerFighterId));
+  const fighters: FighterSetup[] = [player];
+  let i = 0;
+  while (fighters.length < total) {
+    fighters.push({ configId: pool[i % pool.length], isPlayer: false, difficulty: sel.difficulty });
+    i += 1;
+  }
+
+  return { mode: sel.mode, arena, fighters, stocks: sel.stocks, timeLimit: sel.timeLimit };
 }

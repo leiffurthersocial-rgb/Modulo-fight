@@ -1,10 +1,12 @@
 /**
  * The Modulo Fight roster.
  *
- * Each entry is a fully self-contained `FighterConfig`: appearance, stats,
- * passive, and the four attacks (light / heavy / special / ultimate). Adding a
- * new fighter is as simple as appending a config here — no other file needs to
- * change for the character to be selectable and playable.
+ * Each entry is a fully self-contained `FighterConfig`. Stats are deliberately
+ * balanced so that **no fighter strictly dominates another** — every character
+ * trades a strength for a weakness (verified: no Pareto-dominant pair). Robin is
+ * the true median, so they neither dominate nor are dominated by anyone.
+ *
+ * Adding a new fighter is just appending a config here.
  */
 import type { FighterConfig } from '@/core/types';
 import { makeAttack } from './attackTemplates';
@@ -13,25 +15,35 @@ export const FIGHTERS: FighterConfig[] = [
   {
     id: 'robin',
     name: 'Robin',
-    role: 'Balanced',
+    role: 'All-Rounder',
+    emoji: '🥊',
+    blurb: 'Median stats across the board — the easiest fighter to learn.',
     personality: 'Steady, confident, never rattled.',
     passive: 'comboGrowth',
-    passiveDescription: 'Combo damage grows the longer a combo continues.',
+    passiveDescription: 'Each hit in a combo deals up to +40% more damage the longer it continues.',
     extraJumps: 1,
-    stats: { speed: 6.4, weight: 1.0, strength: 1.0, jumpHeight: 17, knockbackResist: 0 },
+    stats: { speed: 6.4, weight: 1.05, strength: 1.0, jumpHeight: 16.3, knockbackResist: 0.1 },
     appearance: {
       skin: '#f2c9a0',
       hair: '#e8c15a',
       hairStyle: 'short',
       eyes: '#5b3a1a',
-      shirt: '#f4f4f2',
+      shirt: '#f5f2e8',
+      pants: '#37508f',
       accent: '#ffd54a',
     },
     attacks: {
-      light: makeAttack('light', { name: 'Quick Jab' }),
-      heavy: makeAttack('heavy', { name: 'Power Cross' }),
+      light: makeAttack('light', {
+        name: 'Quick Jab',
+        description: 'A fast one-two that starts combos.',
+      }),
+      heavy: makeAttack('heavy', {
+        name: 'Power Cross',
+        description: 'A committed straight that launches at mid percent.',
+      }),
       special: makeAttack('special', {
         name: 'Rapid Punches',
+        description: 'A flurry of quick blows — low knockback but racks up damage fast.',
         damage: 2.4,
         active: 0.5,
         baseKnockback: 2,
@@ -41,6 +53,7 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       ultimate: makeAttack('ultimate', {
         name: 'Golden Rush',
+        description: 'A blinding gold-charged rush that blasts anyone in front away.',
         damage: 30,
         baseKnockback: 18,
         reach: 2.2,
@@ -50,25 +63,36 @@ export const FIGHTERS: FighterConfig[] = [
   {
     id: 'leif',
     name: 'Leif',
-    role: 'Fast fighter',
+    role: 'Speedster',
+    emoji: '💨',
+    blurb: 'Fastest runner alive, but light and hits a little soft.',
     personality: 'Restless, playful, always moving.',
     passive: 'runSpeed',
-    passiveDescription: 'Highest running speed on the roster.',
+    passiveDescription: 'Highest running speed on the roster; closes distance instantly.',
     extraJumps: 1,
-    stats: { speed: 7.8, weight: 0.9, strength: 0.95, jumpHeight: 17.5, knockbackResist: 0 },
+    stats: { speed: 8.0, weight: 0.88, strength: 0.9, jumpHeight: 16.8, knockbackResist: 0 },
     appearance: {
-      skin: '#e8b98c',
+      skin: '#e0a877',
       hair: '#5a3a22',
       hairStyle: 'medium',
       eyes: '#8a8f96',
       shirt: '#1c1c1f',
+      pants: '#3a3d45',
       accent: '#38d0ff',
     },
     attacks: {
-      light: makeAttack('light', { name: 'Snap Kick', startup: 0.05 }),
-      heavy: makeAttack('heavy', { name: 'Spin Heel' }),
+      light: makeAttack('light', {
+        name: 'Snap Kick',
+        description: 'A lightning jab kick — the fastest startup in the game.',
+        startup: 0.05,
+      }),
+      heavy: makeAttack('heavy', {
+        name: 'Spin Heel',
+        description: 'A spinning heel kick with surprising launch power.',
+      }),
       special: makeAttack('special', {
         name: 'Flying Kick',
+        description: 'Leaps forward in a diagonal kick — great burst approach or finisher.',
         damage: 11,
         baseKnockback: 7,
         angle: Math.PI * 0.18,
@@ -77,6 +101,7 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       ultimate: makeAttack('ultimate', {
         name: 'Hurricane Combo',
+        description: 'A whirlwind of kicks that traps and then launches the target.',
         damage: 24,
         active: 0.4,
         baseKnockback: 15,
@@ -86,25 +111,37 @@ export const FIGHTERS: FighterConfig[] = [
   {
     id: 'jovan',
     name: 'Jovan',
-    role: 'Range fighter',
+    role: 'Zoner',
+    emoji: '🎯',
+    blurb: 'Longest reach — controls space and pokes from just out of range.',
     personality: 'Calm, calculating, keeps his distance.',
     passive: 'reach',
-    passiveDescription: 'Longer melee reach than anyone else.',
+    passiveDescription: 'All attacks reach noticeably farther than anyone else’s.',
     extraJumps: 1,
-    stats: { speed: 6.2, weight: 0.95, strength: 1.0, jumpHeight: 16.5, knockbackResist: 0 },
+    stats: { speed: 6.1, weight: 0.95, strength: 1.02, jumpHeight: 17.2, knockbackResist: 0.04 },
     appearance: {
       skin: '#e6bd97',
       hair: '#4a3320',
       hairStyle: 'medium',
       eyes: '#5b3a1a',
-      shirt: '#f4f4f2',
+      shirt: '#eef2f7',
+      pants: '#2f4a35',
       accent: '#8affc1',
     },
     attacks: {
-      light: makeAttack('light', { name: 'Long Jab', reach: 1.5 }),
-      heavy: makeAttack('heavy', { name: 'Reach Strike', reach: 1.8 }),
+      light: makeAttack('light', {
+        name: 'Long Jab',
+        description: 'An extended straight that out-spaces most light attacks.',
+        reach: 1.5,
+      }),
+      heavy: makeAttack('heavy', {
+        name: 'Reach Strike',
+        description: 'A far-reaching lunge punch that catches approaches.',
+        reach: 1.8,
+      }),
       special: makeAttack('special', {
         name: 'Roundhouse Spin',
+        description: 'A wide spinning kick that sweeps a large arc around him.',
         damage: 10,
         reach: 2.1,
         angle: Math.PI * 0.24,
@@ -112,6 +149,7 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       ultimate: makeAttack('ultimate', {
         name: 'Cyclone Strike',
+        description: 'A massive spinning vortex with enormous range and launch.',
         damage: 25,
         reach: 2.6,
         active: 0.36,
@@ -122,23 +160,31 @@ export const FIGHTERS: FighterConfig[] = [
     id: 'leonidas',
     name: 'Leonidas',
     role: 'Tank',
+    emoji: '🛡️',
+    blurb: 'Heaviest and hardest to launch, but slow and low-jumping.',
     personality: 'Immovable, proud, speaks softly.',
     passive: 'knockbackArmor',
-    passiveDescription: 'Takes reduced knockback from all hits.',
+    passiveDescription: 'Takes 28% less knockback from every hit — survives to absurd percents.',
     extraJumps: 1,
-    stats: { speed: 5.2, weight: 1.5, strength: 1.15, jumpHeight: 14.5, knockbackResist: 0.28 },
+    stats: { speed: 5.0, weight: 1.5, strength: 1.15, jumpHeight: 14.0, knockbackResist: 0.3 },
     appearance: {
-      skin: '#eabf95',
+      skin: '#d9a273',
       hair: '#4a3320',
       hairStyle: 'styled',
       eyes: '#5b3a1a',
-      shirt: '#7a2f2f',
+      shirt: '#8a2f2f',
+      pants: '#3a2a1e',
       accent: '#ff7a3c',
     },
     attacks: {
-      light: makeAttack('light', { name: 'Hook', damage: 5 }),
+      light: makeAttack('light', {
+        name: 'Hook',
+        description: 'A heavy hook — slower than most jabs but hits harder.',
+        damage: 5,
+      }),
       heavy: makeAttack('heavy', {
         name: 'Sledge',
+        description: 'A crushing overhand that sends light fighters flying.',
         damage: 16,
         baseKnockback: 10,
         knockbackScaling: 0.36,
@@ -146,6 +192,7 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       special: makeAttack('special', {
         name: 'Ground Slam',
+        description: 'Slams the ground, launching nearby foes straight up.',
         damage: 13,
         baseKnockback: 9,
         angle: Math.PI * 0.5,
@@ -155,6 +202,7 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       ultimate: makeAttack('ultimate', {
         name: 'Earthquake',
+        description: 'A ground-shattering quake that erupts everyone around him skyward.',
         damage: 28,
         radius: 2.2,
         reach: 2.4,
@@ -165,27 +213,37 @@ export const FIGHTERS: FighterConfig[] = [
   {
     id: 'erim',
     name: 'Erim',
-    role: 'Defensive strategist',
+    role: 'Counter-Puncher',
+    emoji: '🧠',
+    blurb: 'Durable and patient — punishes whiffs with heavy counter-hits.',
     personality: 'Patient, analytical, punishes mistakes.',
     passive: 'counterForce',
-    passiveDescription: 'Counter-hits deal extra knockback.',
+    passiveDescription: 'Hitting a foe who is mid-attack deals +25% knockback (counter-hit).',
     extraJumps: 1,
-    stats: { speed: 5.9, weight: 1.05, strength: 0.95, jumpHeight: 16, knockbackResist: 0.08 },
+    stats: { speed: 5.9, weight: 1.12, strength: 0.92, jumpHeight: 15.8, knockbackResist: 0.2 },
     appearance: {
-      skin: '#e0b48a',
+      skin: '#cf9f74',
       hair: '#161616',
       hairStyle: 'goatee',
       eyes: '#5b3a1a',
-      shirt: '#2b3a55',
+      shirt: '#26355c',
+      pants: '#1a2236',
       accent: '#7c5cff',
       glasses: true,
       goatee: true,
     },
     attacks: {
-      light: makeAttack('light', { name: 'Palm Jab' }),
-      heavy: makeAttack('heavy', { name: 'Counter Strike' }),
+      light: makeAttack('light', {
+        name: 'Palm Jab',
+        description: 'A crisp palm strike, best thrown to interrupt attackers.',
+      }),
+      heavy: makeAttack('heavy', {
+        name: 'Counter Strike',
+        description: 'A precise blow — devastating as a counter-hit thanks to his passive.',
+      }),
       special: makeAttack('special', {
         name: 'Energy Shield',
+        description: 'A burst of shielding energy that shoves and staggers attackers.',
         damage: 6,
         baseKnockback: 5,
         angle: Math.PI * 0.35,
@@ -194,6 +252,7 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       ultimate: makeAttack('ultimate', {
         name: 'Laser Barrage',
+        description: 'A sustained beam volley that pelts and pushes foes off the stage.',
         damage: 22,
         active: 0.5,
         reach: 2.4,
@@ -205,24 +264,35 @@ export const FIGHTERS: FighterConfig[] = [
     id: 'till',
     name: 'Till',
     role: 'Acrobat',
+    emoji: '🤸',
+    blurb: 'Triple jump and the best air game — but frail and light-hitting.',
     personality: 'Bouncy, fearless, loves the air.',
     passive: 'tripleJump',
-    passiveDescription: 'Can jump three times before landing.',
+    passiveDescription: 'Jumps three times before landing — unmatched recovery and air control.',
     extraJumps: 2,
-    stats: { speed: 6.8, weight: 0.85, strength: 0.9, jumpHeight: 18, knockbackResist: 0 },
+    stats: { speed: 6.9, weight: 0.82, strength: 0.85, jumpHeight: 18.6, knockbackResist: 0 },
     appearance: {
-      skin: '#f2c9a0',
+      skin: '#f4d0aa',
       hair: '#efd35f',
       hairStyle: 'short',
       eyes: '#3b6ea5',
-      shirt: '#2f7a4f',
+      shirt: '#2f9a5a',
+      pants: '#dfe6ec',
       accent: '#6affea',
     },
     attacks: {
-      light: makeAttack('light', { name: 'Flip Jab', startup: 0.05 }),
-      heavy: makeAttack('heavy', { name: 'Somersault' }),
+      light: makeAttack('light', {
+        name: 'Flip Jab',
+        description: 'A nimble flipping jab that flows into aerials.',
+        startup: 0.05,
+      }),
+      heavy: makeAttack('heavy', {
+        name: 'Somersault',
+        description: 'An acrobatic somersault kick that launches upward.',
+      }),
       special: makeAttack('special', {
         name: 'Dive Kick',
+        description: 'A steep dive kick from the air — spikes foes downward off ledges.',
         damage: 10,
         angle: -Math.PI * 0.25,
         reach: 1.5,
@@ -230,6 +300,7 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       ultimate: makeAttack('ultimate', {
         name: 'Sky Storm',
+        description: 'A cyclone of aerial strikes that carries foes up and away.',
         damage: 23,
         angle: Math.PI * 0.4,
         active: 0.4,
@@ -239,26 +310,37 @@ export const FIGHTERS: FighterConfig[] = [
   {
     id: 'lenni',
     name: 'Lenni',
-    role: 'Technical fighter',
+    role: 'Technician',
+    emoji: '⚙️',
+    blurb: 'A glass cannon — fast and hard-hitting, but frail and floaty.',
     personality: 'Precise, focused, calls his shots.',
     passive: 'precision',
-    passiveDescription: 'Precision attacks land with increased knockback.',
+    passiveDescription: 'Heavy and special attacks land with +18% knockback when they connect cleanly.',
     extraJumps: 1,
-    stats: { speed: 6.5, weight: 1.0, strength: 1.05, jumpHeight: 16.8, knockbackResist: 0 },
+    stats: { speed: 6.6, weight: 1.0, strength: 1.12, jumpHeight: 16.9, knockbackResist: 0.06 },
     appearance: {
       skin: '#ecc199',
       hair: '#6b4a2c',
       hairStyle: 'medium',
       eyes: '#5b3a1a',
-      shirt: '#26402c',
+      shirt: '#1f5e3a',
+      pants: '#4a4a2c',
       accent: '#b6ff3c',
       glasses: true,
     },
     attacks: {
-      light: makeAttack('light', { name: 'Precise Jab' }),
-      heavy: makeAttack('heavy', { name: 'Pinpoint Smash', knockbackScaling: 0.4 }),
+      light: makeAttack('light', {
+        name: 'Precise Jab',
+        description: 'A clean, reliable poke that sets up his stronger moves.',
+      }),
+      heavy: makeAttack('heavy', {
+        name: 'Pinpoint Smash',
+        description: 'A pinpoint smash with vicious knockback scaling — an early kill move.',
+        knockbackScaling: 0.4,
+      }),
       special: makeAttack('special', {
         name: 'Quick Dash Strike',
+        description: 'Dashes forward with a precise strike — a fast, safe punish.',
         damage: 10,
         baseKnockback: 7,
         angle: Math.PI * 0.14,
@@ -266,8 +348,9 @@ export const FIGHTERS: FighterConfig[] = [
         cooldown: 1.4,
       }),
       ultimate: makeAttack('ultimate', {
-        // Signature: leaps skyward, then a diving kick with huge knockback.
         name: 'Kloten Kick',
+        description:
+          'Launches high into the air, then a thunderous diving kick with a shockwave and extreme knockback — his signature.',
         damage: 32,
         baseKnockback: 20,
         knockbackScaling: 0.6,
@@ -283,30 +366,39 @@ export const FIGHTERS: FighterConfig[] = [
   {
     id: 'tusya',
     name: 'Tusya',
-    role: 'Heavy striker',
+    role: 'Bruiser',
+    emoji: '💥',
+    blurb: 'Hits the hardest and hard to move — but the slowest on foot.',
     personality: 'Loud, relentless, hits like a truck.',
     passive: 'heavyStun',
-    passiveDescription: 'Heavy attacks briefly stun on hit.',
+    passiveDescription: 'Heavy attacks briefly stun on hit, guaranteeing a follow-up.',
     extraJumps: 1,
-    stats: { speed: 5.5, weight: 1.35, strength: 1.2, jumpHeight: 15, knockbackResist: 0.12 },
+    stats: { speed: 5.3, weight: 1.42, strength: 1.25, jumpHeight: 14.6, knockbackResist: 0.14 },
     appearance: {
       skin: '#6b4a34',
       hair: '#141414',
       hairStyle: 'short',
       eyes: '#4a2f1a',
-      shirt: '#37343b',
+      shirt: '#2c2930',
+      pants: '#4a2020',
       accent: '#ff4d6d',
     },
     attacks: {
-      light: makeAttack('light', { name: 'Heavy Jab', damage: 6 }),
+      light: makeAttack('light', {
+        name: 'Heavy Jab',
+        description: 'Even his jab hits like a normal fighter’s smash.',
+        damage: 6,
+      }),
       heavy: makeAttack('heavy', {
         name: 'Charge Punch',
+        description: 'A booming punch that stuns on hit — the start of a brutal chain.',
         damage: 18,
         baseKnockback: 11,
         startup: 0.2,
       }),
       special: makeAttack('special', {
         name: 'Charge Punch',
+        description: 'Winds up a heavy haymaker that blasts foes back.',
         damage: 14,
         baseKnockback: 10,
         startup: 0.28,
@@ -315,6 +407,7 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       ultimate: makeAttack('ultimate', {
         name: 'Meteor Smash',
+        description: 'A meteoric downward smash that spikes foes into the blast zone.',
         damage: 30,
         baseKnockback: 19,
         angle: -Math.PI * 0.2,

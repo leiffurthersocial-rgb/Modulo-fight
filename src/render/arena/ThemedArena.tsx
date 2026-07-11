@@ -46,7 +46,12 @@ function Island({
         <boxGeometry args={[platform.width * 0.98, 0.3, 3.9]} />
         <meshStandardMaterial color={theme.platformSide} roughness={0.95} />
       </mesh>
-      <mesh position={[0, platform.y - platform.height / 2 - 1.4, 0]}>
+      {/* Underside taper — flattened in Z and pushed behind the play plane so
+          it decorates the island without ever occluding the fighters. */}
+      <mesh
+        position={[0, platform.y - platform.height / 2 - 1.4, -1.5]}
+        scale={[1, 1, 0.32]}
+      >
         <coneGeometry args={[platform.width * 0.42, 2.6, main ? 6 : 5]} />
         <meshStandardMaterial color={theme.platformUnder} roughness={1} />
       </mesh>
@@ -406,15 +411,16 @@ function ConstructionDeco({ theme }: { theme: ArenaTheme }) {
           <meshStandardMaterial color={theme.platformTop} roughness={0.6} metalness={0.4} />
         </mesh>
       ))}
-      {/* Hazard cones on the main platform. */}
-      {[-4, 4].map((x, i) => (
-        <group key={i} position={[x, 0.9, 1.6]}>
+      {/* Hazard cones sit well behind the play plane so they decorate without
+          ever blocking the fighters. */}
+      {[-7, 7].map((x, i) => (
+        <group key={i} position={[x, -5.6, -6]}>
           <mesh>
-            <coneGeometry args={[0.3, 0.7, 8]} />
+            <coneGeometry args={[0.4, 0.9, 8]} />
             <meshStandardMaterial color="#ff6a00" roughness={0.7} />
           </mesh>
-          <mesh position={[0, 0.15, 0]}>
-            <torusGeometry args={[0.22, 0.05, 6, 12]} />
+          <mesh position={[0, 0.2, 0]}>
+            <torusGeometry args={[0.28, 0.06, 6, 12]} />
             <meshStandardMaterial color="#ffffff" />
           </mesh>
         </group>

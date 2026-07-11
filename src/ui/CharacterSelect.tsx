@@ -45,8 +45,12 @@ export function CharacterSelect() {
     setPlayerFighter,
     setDifficulty,
     setStocks,
+    duelOpponentId,
+    setDuelOpponent,
     practiceOpponentId,
     setPracticeOpponent,
+    practiceStocks,
+    setPracticeStocks,
     goto,
   } = useGame();
   const behavior = useDebug((s) => s.behavior);
@@ -120,6 +124,35 @@ export function CharacterSelect() {
               ))}
             </div>
           </div>
+
+          {mode === '1v1' && (
+            <div className="field">
+              <span className="field-label">Opponent</span>
+              <div className="chips">
+                <button
+                  className={`chip ${duelOpponentId === 'random' ? 'active' : ''}`}
+                  onClick={() => {
+                    audioManager.play('select');
+                    setDuelOpponent('random');
+                  }}
+                >
+                  🎲 Random
+                </button>
+                {FIGHTERS.filter((f) => f.id !== playerFighterId).map((f) => (
+                  <button
+                    key={f.id}
+                    className={`chip ${duelOpponentId === f.id ? 'active' : ''}`}
+                    onClick={() => {
+                      audioManager.play('select');
+                      setDuelOpponent(f.id);
+                    }}
+                  >
+                    {f.emoji} {f.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {!isPractice && (
             <div className="row" style={{ gap: 32 }}>
@@ -211,6 +244,23 @@ export function CharacterSelect() {
                     </button>
                   </div>
                 </div>
+                <div className="field">
+                  <span className="field-label">Lives</span>
+                  <div className="chips">
+                    {[1, 3, 5, 99].map((n) => (
+                      <button
+                        key={n}
+                        className={`chip ${practiceStocks === n ? 'active' : ''}`}
+                        onClick={() => {
+                          audioManager.play('select');
+                          setPracticeStocks(n);
+                        }}
+                      >
+                        {n === 99 ? '∞' : n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="hint" style={{ margin: 0 }}>
                 Tip: tap the logo 3× (here or on the pause screen) to open the debug menu for
@@ -236,7 +286,9 @@ export function CharacterSelect() {
                 style={{
                   background: `linear-gradient(160deg, ${f.appearance.shirt}, ${f.appearance.accent})`,
                 }}
-              />
+              >
+                <span className="fighter-emoji">{f.emoji}</span>
+              </span>
               <span className="fighter-name">{f.name}</span>
               <span className="fighter-role">{f.role}</span>
             </button>
@@ -247,28 +299,38 @@ export function CharacterSelect() {
         <div className="detail">
           <div>
             <h2 style={{ fontSize: 20 }}>
+              <span style={{ marginRight: 6 }}>{selected.emoji}</span>
               {selected.name} <span className="badge">{selected.role}</span>
             </h2>
-            <p className="hint" style={{ marginTop: 6 }}>
+            <p style={{ marginTop: 6, fontSize: 14, color: 'var(--text)' }}>{selected.blurb}</p>
+            <p className="hint" style={{ marginTop: 4 }}>
               {selected.personality}
             </p>
             <StatBars fighter={selected} />
           </div>
           <div>
-            <div className="move-line">
-              <b>Passive:</b> {selected.passiveDescription}
+            <div className="move-block">
+              <span className="move-head">⭐ Passive</span>
+              <p className="move-desc">{selected.passiveDescription}</p>
             </div>
-            <div className="move-line">
-              <b>Light:</b> {selected.attacks.light.name}
+            <div className="move-block">
+              <span className="move-head">
+                <span className="kbd">L</span> {selected.attacks.special.name}
+              </span>
+              <p className="move-desc">{selected.attacks.special.description}</p>
             </div>
-            <div className="move-line">
-              <b>Heavy:</b> {selected.attacks.heavy.name}
+            <div className="move-block">
+              <span className="move-head">
+                <span className="kbd">U</span> {selected.attacks.ultimate.name} — Ultimate
+              </span>
+              <p className="move-desc">{selected.attacks.ultimate.description}</p>
             </div>
-            <div className="move-line">
-              <b>Special:</b> {selected.attacks.special.name}
-            </div>
-            <div className="move-line">
-              <b>Ultimate:</b> {selected.attacks.ultimate.name}
+            <div className="move-block">
+              <span className="move-head">Basics</span>
+              <p className="move-desc">
+                <b>{selected.attacks.light.name}</b> ({selected.attacks.light.description}) ·{' '}
+                <b>{selected.attacks.heavy.name}</b> ({selected.attacks.heavy.description})
+              </p>
             </div>
           </div>
         </div>
