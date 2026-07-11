@@ -20,25 +20,35 @@ interface Props {
   sim: Simulation;
   quality: Quality;
   cameraShake: boolean;
+  /** Scales ambient/decorative particle counts (1 = full, <1 = battery saver). */
+  effectsScale?: number;
   beginFrame: () => void;
   endFrame: () => void;
   onFinished: () => void;
 }
 
-export function GameScene({ sim, quality, cameraShake, beginFrame, endFrame, onFinished }: Props) {
+export function GameScene({
+  sim,
+  quality,
+  cameraShake,
+  effectsScale = 1,
+  beginFrame,
+  endFrame,
+  onFinished,
+}: Props) {
   return (
     <Suspense fallback={null}>
       {/* Themed sky background per arena. */}
       <color attach="background" args={[sim.config.arena.theme.sky]} />
 
       <Lighting quality={quality} theme={sim.config.arena.theme} />
-      <ArenaView arena={sim.config.arena} />
+      <ArenaView arena={sim.config.arena} effectsScale={effectsScale} />
 
       {sim.fighters.map((f) => (
         <FighterView key={f.config.id + f.index} runtime={f} />
       ))}
 
-      <Particles events={sim.events} />
+      <Particles events={sim.events} maxParticles={Math.round(260 * effectsScale)} />
       <DebugOverlay sim={sim} />
 
       <MatchRunner

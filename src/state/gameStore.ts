@@ -4,7 +4,8 @@
  * This holds only what React needs to render menus and the HUD. The live
  * physics/combat state lives in the `Simulation` (plain objects) to avoid
  * re-rendering React on every frame; the HUD reads a throttled snapshot pushed
- * here via `setHudSnapshot`.
+ * here via `setHudSnapshot`. Match-setup selections (mode/fighter/arena/etc.)
+ * persist across sessions so the player doesn't have to re-pick every time.
  */
 import { create } from 'zustand';
 import type { Difficulty, GameMode, Screen } from '@/core/types';
@@ -36,10 +37,8 @@ export interface HudSnapshot {
   timeRemaining: number;
 }
 
-interface GameState {
-  screen: Screen;
-
-  // Match setup selections.
+/** The subset of state that persists across sessions. */
+interface PersistedSelections {
   mode: GameMode;
   arenaId: string;
   playerFighterId: string;
@@ -47,18 +46,26 @@ interface GameState {
   difficulty: Difficulty;
   stocks: number;
   timeLimit: number;
-  /** 1v1: chosen opponent id, or 'random' to pick a random one each match. */
   duelOpponentId: string;
-  /** Practice mode: which fighter the training dummy uses. */
   practiceOpponentId: string;
-  /** Practice mode: stocks/lives (99 = unlimited). */
   practiceStocks: number;
+}
+
+interface GameState extends PersistedSelections {
+  screen: Screen;
 
   // HUD snapshot (throttled from the simulation).
   hud: HudSnapshot;
 
   // Results.
-  resultPlacements: { index: number; configId: string; name: string }[];
+  resultPlacements: {
+    index: number;
+    configId: string;
+    name: string;
+    damageDealt: number;
+    damageTaken: number;
+    kos: number;
+  }[];
 
   // FPS readout for debug HUD.
   fps: number;
@@ -88,9 +95,9 @@ export const MODE_FIGHTER_COUNT: Record<GameMode, number> = {
   ffa8: 8,
 };
 
-export const useGame = create<GameState>((set) => ({
-  screen: 'mainMenu',
+const STORAGE_KEY = 'modulo-fight-selections';
 
+const DEFAULTS: PersistedSelections = {
   mode: '1v1',
   arenaId: 'skyTemple',
   playerFighterId: 'robin',
@@ -101,23 +108,105 @@ export const useGame = create<GameState>((set) => ({
   duelOpponentId: 'random',
   practiceOpponentId: 'leif',
   practiceStocks: 3,
+};
 
-  hud: { fighters: [], timeRemaining: DEFAULT_TIME_LIMIT },
-  resultPlacements: [],
-  fps: 60,
+function loadSelections(): Partial<PersistedSelections> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
 
-  goto: (screen) => set({ screen }),
-  setMode: (mode) => set({ mode }),
-  setArena: (arenaId) => set({ arenaId }),
-  setPlayerFighter: (playerFighterId) => set({ playerFighterId }),
-  setDifficulty: (difficulty) => set({ difficulty }),
-  setStocks: (stocks) => set({ stocks }),
-  setTimeLimit: (timeLimit) => set({ timeLimit }),
-  setBotFighters: (botFighterIds) => set({ botFighterIds }),
-  setDuelOpponent: (duelOpponentId) => set({ duelOpponentId }),
-  setPracticeOpponent: (practiceOpponentId) => set({ practiceOpponentId }),
-  setPracticeStocks: (practiceStocks) => set({ practiceStocks }),
-  setHudSnapshot: (hud) => set({ hud }),
-  setResults: (resultPlacements) => set({ resultPlacements }),
-  setFps: (fps) => set({ fps }),
-}));
+function persistSelections(state: PersistedSelections): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    /* ignore quota / privacy-mode errors */
+  }
+}
+
+const saved = loadSelections();
+
+export const useGame = create<GameState>((set, get) => {
+  const commit = (): void => {
+    const s = get();
+    persistSelections({
+      mode: s.mode,
+      arenaId: s.arenaId,
+      playerFighterId: s.playerFighterId,
+      botFighterIds: s.botFighterIds,
+      difficulty: s.difficulty,
+      stocks: s.stocks,
+      timeLimit: s.timeLimit,
+      duelOpponentId: s.duelOpponentId,
+      practiceOpponentId: s.practiceOpponentId,
+      practiceStocks: s.practiceStocks,
+    });
+  };
+
+  return {
+    screen: 'mainMenu',
+
+    mode: saved.mode ?? DEFAULTS.mode,
+    arenaId: saved.arenaId ?? DEFAULTS.arenaId,
+    playerFighterId: saved.playerFighterId ?? DEFAULTS.playerFighterId,
+    botFighterIds: saved.botFighterIds ?? DEFAULTS.botFighterIds,
+    difficulty: saved.difficulty ?? DEFAULTS.difficulty,
+    stocks: saved.stocks ?? DEFAULTS.stocks,
+    timeLimit: saved.timeLimit ?? DEFAULTS.timeLimit,
+    duelOpponentId: saved.duelOpponentId ?? DEFAULTS.duelOpponentId,
+    practiceOpponentId: saved.practiceOpponentId ?? DEFAULTS.practiceOpponentId,
+    practiceStocks: saved.practiceStocks ?? DEFAULTS.practiceStocks,
+
+    hud: { fighters: [], timeRemaining: DEFAULT_TIME_LIMIT },
+    resultPlacements: [],
+    fps: 60,
+
+    goto: (screen) => set({ screen }),
+    setMode: (mode) => {
+      set({ mode });
+      commit();
+    },
+    setArena: (arenaId) => {
+      set({ arenaId });
+      commit();
+    },
+    setPlayerFighter: (playerFighterId) => {
+      set({ playerFighterId });
+      commit();
+    },
+    setDifficulty: (difficulty) => {
+      set({ difficulty });
+      commit();
+    },
+    setStocks: (stocks) => {
+      set({ stocks });
+      commit();
+    },
+    setTimeLimit: (timeLimit) => {
+      set({ timeLimit });
+      commit();
+    },
+    setBotFighters: (botFighterIds) => {
+      set({ botFighterIds });
+      commit();
+    },
+    setDuelOpponent: (duelOpponentId) => {
+      set({ duelOpponentId });
+      commit();
+    },
+    setPracticeOpponent: (practiceOpponentId) => {
+      set({ practiceOpponentId });
+      commit();
+    },
+    setPracticeStocks: (practiceStocks) => {
+      set({ practiceStocks });
+      commit();
+    },
+    setHudSnapshot: (hud) => set({ hud }),
+    setResults: (resultPlacements) => set({ resultPlacements }),
+    setFps: (fps) => set({ fps }),
+  };
+});

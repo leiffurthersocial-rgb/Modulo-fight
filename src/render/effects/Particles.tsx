@@ -10,7 +10,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { EventBus } from '@/systems/simulation/events';
 
-const MAX_PARTICLES = 260;
+const DEFAULT_MAX_PARTICLES = 260;
 
 interface Particle {
   active: boolean;
@@ -28,12 +28,19 @@ interface Particle {
 
 interface Props {
   events: EventBus;
+  /** Pool size; frozen at mount (a mid-match settings change applies next match). */
+  maxParticles?: number;
 }
 
-export function Particles({ events }: Props) {
+export function Particles({ events, maxParticles = DEFAULT_MAX_PARTICLES }: Props) {
+  // Frozen at mount: the instancedMesh's buffer count can't change without a
+  // full remount, so we lock the pool size to whatever was passed in first.
+  const MAX_PARTICLES = useRef(Math.max(20, maxParticles)).current;
   const meshRef = useRef<THREE.InstancedMesh>(null!);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const color = useMemo(() => new THREE.Color(), []);
+  // MAX_PARTICLES is frozen for this component's lifetime (see the ref above),
+  // so it's intentionally omitted from the dependency arrays below.
   const pool = useMemo<Particle[]>(
     () =>
       Array.from({ length: MAX_PARTICLES }, () => ({
@@ -49,6 +56,7 @@ export function Particles({ events }: Props) {
         g: 1,
         b: 1,
       })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   const cursor = useRef(0);
@@ -82,6 +90,7 @@ export function Particles({ events }: Props) {
           p.b = rgb[2];
         }
       },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [pool],
   );
 

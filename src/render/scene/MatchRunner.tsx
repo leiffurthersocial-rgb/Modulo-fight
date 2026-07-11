@@ -113,8 +113,16 @@ export function MatchRunner({ sim, beginFrame, endFrame, cameraShake, onFinished
     if (sim.status === 'finished' && !finished.current) {
       finished.current = true;
       const placements = (sim.result?.placements ?? []).map((idx) => {
-        const cfg = getFighter(sim.fighters[idx].config.id);
-        return { index: idx, configId: cfg.id, name: cfg.name };
+        const f = sim.fighters[idx];
+        const cfg = getFighter(f.config.id);
+        return {
+          index: idx,
+          configId: cfg.id,
+          name: cfg.name,
+          damageDealt: Math.round(f.totalDamageDealt),
+          damageTaken: Math.round(f.totalDamageTaken),
+          kos: f.koCount,
+        };
       });
       useGame.getState().setResults(placements);
       onFinished();

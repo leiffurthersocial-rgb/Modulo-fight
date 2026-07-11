@@ -14,6 +14,8 @@ import type { ArenaConfig, ArenaTheme, Platform } from '@/core/types';
 
 interface Props {
   arena: ArenaConfig;
+  /** Scales ambient/decorative particle counts (1 = full, <1 = battery saver). */
+  effectsScale?: number;
 }
 
 /** A themed floating island for one collision platform. */
@@ -123,7 +125,15 @@ function ParticleField({
  * Decoration sets                                                     *
  * ------------------------------------------------------------------ */
 
-function TempleDeco({ arena, theme }: { arena: ArenaConfig; theme: ArenaTheme }) {
+function TempleDeco({
+  arena,
+  theme,
+  effectsScale,
+}: {
+  arena: ArenaConfig;
+  theme: ArenaTheme;
+  effectsScale: number;
+}) {
   const main = arena.platforms[0];
   const columns = useMemo(() => {
     const xs: number[] = [];
@@ -131,9 +141,10 @@ function TempleDeco({ arena, theme }: { arena: ArenaConfig; theme: ArenaTheme })
     for (let x = -half; x <= half; x += 2.4) xs.push(x);
     return xs;
   }, [main.width]);
+  const cloudCount = Math.max(4, Math.round(14 * effectsScale));
   const clouds = useMemo(
     () =>
-      Array.from({ length: 14 }, () => ({
+      Array.from({ length: cloudCount }, () => ({
         pos: [(Math.random() - 0.5) * 60, -8 + Math.random() * 24, -12 - Math.random() * 14] as [
           number,
           number,
@@ -141,7 +152,7 @@ function TempleDeco({ arena, theme }: { arena: ArenaConfig; theme: ArenaTheme })
         ],
         scale: 2 + Math.random() * 4,
       })),
-    [],
+    [cloudCount],
   );
   return (
     <group>
@@ -175,7 +186,7 @@ function TempleDeco({ arena, theme }: { arena: ArenaConfig; theme: ArenaTheme })
   );
 }
 
-function VolcanoDeco() {
+function VolcanoDeco({ effectsScale }: { effectsScale: number }) {
   const lava = useRef<THREE.MeshStandardMaterial>(null!);
   useFrame(({ clock }) => {
     if (lava.current) lava.current.emissiveIntensity = 1.2 + Math.sin(clock.elapsedTime * 2) * 0.4;
@@ -205,7 +216,7 @@ function VolcanoDeco() {
         </mesh>
       ))}
       <ParticleField
-        count={40}
+        count={Math.max(6, Math.round(40 * effectsScale))}
         color="#ff8a3c"
         size={0.14}
         spread={{ x: 40, y: 30, z: [-10, 2] }}
@@ -317,7 +328,7 @@ function CastleDeco({ theme }: { theme: ArenaTheme }) {
   );
 }
 
-function SnowDeco({ theme }: { theme: ArenaTheme }) {
+function SnowDeco({ theme, effectsScale }: { theme: ArenaTheme; effectsScale: number }) {
   const trees = useMemo<[number, number, number][]>(
     () => [
       [-12, -3, -8],
@@ -344,7 +355,7 @@ function SnowDeco({ theme }: { theme: ArenaTheme }) {
         </group>
       ))}
       <ParticleField
-        count={60}
+        count={Math.max(8, Math.round(60 * effectsScale))}
         color="#ffffff"
         size={0.1}
         spread={{ x: 44, y: 34, z: [-10, 4] }}
@@ -356,7 +367,7 @@ function SnowDeco({ theme }: { theme: ArenaTheme }) {
   );
 }
 
-function SpaceDeco({ theme }: { theme: ArenaTheme }) {
+function SpaceDeco({ theme, effectsScale }: { theme: ArenaTheme; effectsScale: number }) {
   return (
     <group>
       {/* Distant planet. */}
@@ -380,7 +391,7 @@ function SpaceDeco({ theme }: { theme: ArenaTheme }) {
         </mesh>
       ))}
       <ParticleField
-        count={80}
+        count={Math.max(10, Math.round(80 * effectsScale))}
         color="#ffffff"
         size={0.08}
         spread={{ x: 60, y: 44, z: [-25, -6] }}
@@ -429,13 +440,13 @@ function ConstructionDeco({ theme }: { theme: ArenaTheme }) {
   );
 }
 
-function Decoration({ arena }: { arena: ArenaConfig }) {
+function Decoration({ arena, effectsScale }: { arena: ArenaConfig; effectsScale: number }) {
   const t = arena.theme;
   switch (t.decoration) {
     case 'temple':
-      return <TempleDeco arena={arena} theme={t} />;
+      return <TempleDeco arena={arena} theme={t} effectsScale={effectsScale} />;
     case 'volcano':
-      return <VolcanoDeco />;
+      return <VolcanoDeco effectsScale={effectsScale} />;
     case 'cyber':
       return <CyberDeco theme={t} />;
     case 'forest':
@@ -443,9 +454,9 @@ function Decoration({ arena }: { arena: ArenaConfig }) {
     case 'castle':
       return <CastleDeco theme={t} />;
     case 'snow':
-      return <SnowDeco theme={t} />;
+      return <SnowDeco theme={t} effectsScale={effectsScale} />;
     case 'space':
-      return <SpaceDeco theme={t} />;
+      return <SpaceDeco theme={t} effectsScale={effectsScale} />;
     case 'construction':
       return <ConstructionDeco theme={t} />;
     default:
@@ -453,7 +464,7 @@ function Decoration({ arena }: { arena: ArenaConfig }) {
   }
 }
 
-export function ThemedArena({ arena }: Props) {
+export function ThemedArena({ arena, effectsScale = 1 }: Props) {
   const t = arena.theme;
   const glowEdges = t.decoration === 'cyber';
   return (
@@ -461,7 +472,7 @@ export function ThemedArena({ arena }: Props) {
       {arena.platforms.map((p, i) => (
         <Island key={i} platform={p} theme={t} main={i === 0} glowEdges={glowEdges} />
       ))}
-      <Decoration arena={arena} />
+      <Decoration arena={arena} effectsScale={effectsScale} />
     </group>
   );
 }

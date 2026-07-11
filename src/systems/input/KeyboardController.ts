@@ -61,6 +61,13 @@ export class KeyboardController {
     this.onPause = fn;
   }
 
+  /** Replace bindings live (e.g. when the player remaps a key in Settings). */
+  setBindings(bindings: Bindings): void {
+    this.bindings = bindings;
+    this.held.clear();
+    this.pressedThisFrame.clear();
+  }
+
   attach(): void {
     window.addEventListener('keydown', this.handleDown);
     window.addEventListener('keyup', this.handleUp);
