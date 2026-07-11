@@ -11,6 +11,7 @@ import type { Simulation } from '@/systems/simulation/Simulation';
 import { ArenaView } from './arena/ArenaView';
 import { FighterView } from './fighter/FighterView';
 import { Particles } from './effects/Particles';
+import { DebugOverlay } from './effects/DebugOverlay';
 import { Lighting } from './scene/Lighting';
 import { PostEffects } from './scene/PostEffects';
 import { MatchRunner } from './scene/MatchRunner';
@@ -38,6 +39,7 @@ export function GameScene({ sim, quality, cameraShake, beginFrame, endFrame, onF
       ))}
 
       <Particles events={sim.events} />
+      <DebugOverlay sim={sim} />
 
       <MatchRunner
         sim={sim}

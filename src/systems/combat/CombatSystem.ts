@@ -13,6 +13,7 @@ import {
   KNOCKBACK_DAMAGE_SCALE,
 } from '@/core/constants';
 import { clamp, dist } from '@/core/math';
+import { debug } from '@/core/debug';
 import type { EventBus } from '@/systems/simulation/events';
 import {
   effectiveReach,
@@ -145,6 +146,26 @@ function applyHit(
   if (attacker.config.passive === 'counterForce' && victim.attack) {
     kb *= 1.25;
   }
+  // Debug: global knockback scaling.
+  kb *= debug.knockbackScale;
+
+  victim.hitFlash = 0.18;
+  victim.wasHitRecently = 0.4;
+
+  // Immovable training dummies register damage but never launch or flinch.
+  if (victim.immovable) {
+    events.emit({
+      type: 'hit',
+      pos: { ...victim.pos },
+      power: kb,
+      attackerId: attacker.config.id,
+      victimId: victim.config.id,
+    });
+    attacker.comboCount += 1;
+    attacker.comboTimer = COMBO_RESET_TIME;
+    attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012, 0, 1);
+    return;
+  }
 
   const angle = attack.angle;
   victim.vel.x = attacker.facing * Math.cos(angle) * kb;
@@ -161,8 +182,6 @@ function applyHit(
   victim.stateTime = 0;
   victim.grounded = false;
   victim.attack = null;
-  victim.hitFlash = 0.18;
-  victim.wasHitRecently = 0.4;
 
   // --- Combo tracking (attacker builds combos, feeds ult charge) ---------
   attacker.comboCount += 1;

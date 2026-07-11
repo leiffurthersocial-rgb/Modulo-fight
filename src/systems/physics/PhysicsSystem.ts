@@ -20,6 +20,7 @@ import {
   SPRINT_MULTIPLIER,
 } from '@/core/constants';
 import { moveToward } from '@/core/math';
+import { debug } from '@/core/debug';
 import type { InputFrame } from '@/systems/input/InputState';
 import type { FighterRuntime } from '@/systems/simulation/FighterRuntime';
 
@@ -54,7 +55,7 @@ export function integrateMovement(
 
   // --- Jumping ------------------------------------------------------------
   if (canAct && input.jump) {
-    const maxJumps = 1 + f.config.extraJumps;
+    const maxJumps = debug.unlimitedJumps ? 999 : 1 + f.config.extraJumps;
     if (f.grounded) {
       f.vel.y = stats.jumpHeight;
       f.grounded = false;
@@ -77,7 +78,7 @@ export function integrateMovement(
 
   // --- Gravity ------------------------------------------------------------
   if (!f.grounded) {
-    f.vel.y -= GRAVITY * dt;
+    f.vel.y -= GRAVITY * debug.gravityScale * dt;
     if (f.vel.y < -MAX_FALL_SPEED) f.vel.y = -MAX_FALL_SPEED;
   }
 }

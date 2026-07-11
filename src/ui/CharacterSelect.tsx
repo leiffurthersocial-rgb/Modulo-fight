@@ -9,7 +9,9 @@ import { useMemo } from 'react';
 import type { Difficulty, GameMode } from '@/core/types';
 import { ARENAS } from '@/arenas/arenaData';
 import { FIGHTERS, getFighter } from '@/fighters/fighterData';
+import type { TrainingBehavior } from '@/core/debug';
 import { useGame } from '@/state/gameStore';
+import { useDebug } from '@/state/debugStore';
 import { audioManager } from '@/systems/audio/AudioManager';
 import { StatBars } from './StatBars';
 import { ControlsCard } from './Controls';
@@ -21,6 +23,15 @@ const MODES: { id: GameMode; label: string }[] = [
 ];
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'insane'];
+
+const BEHAVIORS: { id: TrainingBehavior; label: string }[] = [
+  { id: 'stand', label: 'No Reaction' },
+  { id: 'ai', label: 'Fight (AI)' },
+  { id: 'walk', label: 'Walk' },
+  { id: 'jump', label: 'Jump' },
+  { id: 'shield', label: 'Shield' },
+  { id: 'dodge', label: 'Dodge' },
+];
 
 export function CharacterSelect() {
   const {
@@ -34,8 +45,14 @@ export function CharacterSelect() {
     setPlayerFighter,
     setDifficulty,
     setStocks,
+    practiceOpponentId,
+    setPracticeOpponent,
     goto,
   } = useGame();
+  const behavior = useDebug((s) => s.behavior);
+  const immovable = useDebug((s) => s.immovable);
+  const setBehavior = useDebug((s) => s.setBehavior);
+  const setImmovable = useDebug((s) => s.setImmovable);
 
   const isPractice = mode === 'practice';
   const selected = useMemo(() => getFighter(playerFighterId), [playerFighterId]);
@@ -139,6 +156,65 @@ export function CharacterSelect() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {isPractice && (
+            <div className="stack">
+              <div className="field">
+                <span className="field-label">Opponent</span>
+                <div className="chips">
+                  {FIGHTERS.map((f) => (
+                    <button
+                      key={f.id}
+                      className={`chip ${practiceOpponentId === f.id ? 'active' : ''}`}
+                      onClick={() => {
+                        audioManager.play('select');
+                        setPracticeOpponent(f.id);
+                      }}
+                    >
+                      {f.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="row" style={{ gap: 32 }}>
+                <div className="field">
+                  <span className="field-label">Behavior</span>
+                  <div className="chips">
+                    {BEHAVIORS.map((b) => (
+                      <button
+                        key={b.id}
+                        className={`chip ${behavior === b.id ? 'active' : ''}`}
+                        onClick={() => {
+                          audioManager.play('select');
+                          setBehavior(b.id);
+                        }}
+                      >
+                        {b.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="field">
+                  <span className="field-label">Knockback</span>
+                  <div className="chips">
+                    <button
+                      className={`chip ${immovable ? 'active' : ''}`}
+                      onClick={() => {
+                        audioManager.play('select');
+                        setImmovable(!immovable);
+                      }}
+                    >
+                      {immovable ? 'Immovable' : 'Normal'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="hint" style={{ margin: 0 }}>
+                Tip: tap the logo 3× (here or on the pause screen) to open the debug menu for
+                live tuning.
               </div>
             </div>
           )}
