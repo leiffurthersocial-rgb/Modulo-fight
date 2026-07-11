@@ -21,6 +21,7 @@ import {
   SPAWN_INVULN,
 } from '@/core/constants';
 import { clamp } from '@/core/math';
+import { debug, practice } from '@/core/debug';
 import type { InputFrame } from '@/systems/input/InputState';
 import { emptyInput } from '@/systems/input/InputState';
 import { AIController } from '@/systems/ai/AIController';
@@ -79,6 +80,8 @@ export class Simulation {
   private accumulator = 0;
   private playerInput: PlayerInputSource;
   private eliminationOrder: number[] = [];
+  /** Monotonic in-match time, used to script practice-dummy behaviour. */
+  private elapsed = 0;
 
   constructor(config: MatchConfig, getFighterConfig: (id: string) => FighterRuntime['config'], playerInput: PlayerInputSource) {
     this.config = config;
@@ -111,8 +114,9 @@ export class Simulation {
   /** Advance the simulation by real elapsed seconds using fixed steps. */
   advance(realDt: number): void {
     if (this.status !== 'running') return;
-    // Clamp to avoid huge catch-up after a tab stall.
-    this.accumulator += Math.min(realDt, 0.25);
+    // Clamp to avoid huge catch-up after a tab stall; debug time-scale lets us
+    // slow-mo or fast-forward the whole match.
+    this.accumulator += Math.min(realDt * debug.timeScale, 0.25);
     let steps = 0;
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
       this.step(FIXED_DT);
@@ -122,16 +126,22 @@ export class Simulation {
   }
 
   private step(dt: number): void {
+    this.elapsed += dt;
+
     // --- Match timer --------------------------------------------------------
     if (this.config.timeLimit > 0) {
       this.timeRemaining = Math.max(0, this.timeRemaining - dt);
       if (this.timeRemaining <= 0) return this.finish();
     }
 
-    // 1. Gather inputs.
+    const isPractice = this.config.mode === 'practice';
+
+    // 1. Gather inputs (player / practice dummy / AI bot).
     const inputs: InputFrame[] = this.fighters.map((f) => {
       if (f.eliminated || f.respawnTimer > 0) return emptyInput();
       if (f.isPlayer) return this.playerInput();
+      if (isPractice) return this.trainingInput(f, dt);
+      if (debug.freezeBots) return emptyInput();
       return this.ai.update(f, this.fighters, this.config.arena, dt);
     });
 
@@ -152,6 +162,15 @@ export class Simulation {
 
   private updateFighter(f: FighterRuntime, input: InputFrame, dt: number): void {
     if (f.eliminated) return;
+
+    // Practice: mark non-player dummies immovable when requested.
+    f.immovable = this.config.mode === 'practice' && practice.immovable && !f.isPlayer;
+
+    // Debug overrides for the local player.
+    if (f.isPlayer) {
+      if (debug.infiniteUlt) f.ultCharge = 1;
+      if (debug.playerInvincible) f.invuln = Math.max(f.invuln, 0.2);
+    }
 
     // --- Countdown timers ---------------------------------------------------
     f.stateTime += dt;
@@ -301,7 +320,87 @@ export class Simulation {
     f.state = 'fall';
   }
 
+  /** Produce input for a practice-mode training dummy. */
+  private trainingInput(f: FighterRuntime, dt: number): InputFrame {
+    if (debug.freezeBots) return emptyInput();
+    const inp = emptyInput();
+    switch (practice.behavior) {
+      case 'ai':
+        f.difficulty = practice.difficulty;
+        return this.ai.update(f, this.fighters, this.config.arena, dt);
+      case 'walk':
+        inp.moveX = Math.sin(this.elapsed * 1.1);
+        return inp;
+      case 'jump':
+        // Fire a jump once per second by detecting the integer-second boundary.
+        inp.jump = Math.floor(this.elapsed) !== Math.floor(this.elapsed - dt);
+        return inp;
+      case 'shield':
+        inp.shield = true;
+        return inp;
+      case 'dodge':
+        inp.dodge = Math.floor(this.elapsed * 1.5) !== Math.floor((this.elapsed - dt) * 1.5);
+        return inp;
+      case 'stand':
+      default:
+        return inp;
+    }
+  }
+
+  /* --------------------------- Debug actions ---------------------------- *
+   * Invoked by the debug menu. They mutate live runtime state directly.    */
+
+  /** The local player's runtime, if any. */
+  get player(): FighterRuntime | undefined {
+    return this.fighters.find((f) => f.isPlayer);
+  }
+
+  /** Reset every fighter to spawn, clearing damage and momentum. */
+  resetPositions(): void {
+    this.fighters.forEach((f, i) => {
+      const spawn = this.config.arena.spawns[i % this.config.arena.spawns.length];
+      f.pos = { x: spawn.x, y: spawn.y };
+      f.vel = { x: 0, y: 0 };
+      f.damage = 0;
+      f.hitstun = 0;
+      f.attack = null;
+      f.comboCount = 0;
+      f.eliminated = false;
+      f.respawnTimer = 0;
+      f.invuln = SPAWN_INVULN;
+      f.state = 'fall';
+    });
+    if (this.status === 'finished') this.status = 'running';
+  }
+
+  /** Set a fighter's damage percentage (defaults to the player). */
+  setDamage(value: number, target = this.player): void {
+    if (target) target.damage = clamp(value, 0, 999);
+  }
+
+  /** Clear damage on all fighters. */
+  healAll(): void {
+    for (const f of this.fighters) f.damage = 0;
+  }
+
+  /** Fill the player's ultimate meter. */
+  chargeUlt(): void {
+    if (this.player) this.player.ultCharge = 1;
+  }
+
+  /** Launch the player for knockback/DI testing. */
+  launchPlayer(dir: number): void {
+    const p = this.player;
+    if (!p) return;
+    p.vel.x = dir * 22;
+    p.vel.y = 16;
+    p.grounded = false;
+    p.state = 'knockback';
+  }
+
   private checkMatchEnd(): void {
+    // Practice never "ends" — it's a sandbox.
+    if (this.config.mode === 'practice') return;
     const alive = this.fighters.filter((f) => !f.eliminated);
     if (alive.length <= 1 && this.fighters.length > 1) {
       this.finish();

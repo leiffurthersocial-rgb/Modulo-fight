@@ -75,6 +75,9 @@ export interface FighterRuntime {
 
   /** Cosmetic: intensity 0..1 for ultimate glow. */
   ultCharge: number;
+
+  /** Practice/debug: immune to knockback and launch (combo practice). */
+  immovable: boolean;
 }
 
 export function createFighterRuntime(
@@ -113,6 +116,7 @@ export function createFighterRuntime(
     wasHitRecently: 0,
     hitFlash: 0,
     ultCharge: 0,
+    immovable: false,
   };
 }
 

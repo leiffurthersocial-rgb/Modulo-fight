@@ -19,13 +19,28 @@ export interface MatchSelections {
   difficulty: Difficulty;
   stocks: number;
   timeLimit: number;
+  practiceOpponentId: string;
 }
 
 export function buildMatchConfig(sel: MatchSelections): MatchConfig {
-  const total = MODE_FIGHTER_COUNT[sel.mode];
   const fighters: FighterSetup[] = [
     { configId: sel.playerFighterId, isPlayer: true, difficulty: 'human' },
   ];
+
+  // Practice is a two-fighter sandbox: player + one chosen dummy, no time
+  // limit and effectively unlimited stocks so it never "ends".
+  if (sel.mode === 'practice') {
+    fighters.push({ configId: sel.practiceOpponentId, isPlayer: false, difficulty: 'easy' });
+    return {
+      mode: 'practice',
+      arena: getArena(sel.arenaId),
+      fighters,
+      stocks: 99,
+      timeLimit: 0,
+    };
+  }
+
+  const total = MODE_FIGHTER_COUNT[sel.mode];
 
   // Preferred bot ids from the menu, then fill from the rest of the roster.
   const used = new Set<string>([sel.playerFighterId]);
@@ -33,16 +48,13 @@ export function buildMatchConfig(sel: MatchSelections): MatchConfig {
   const fallback = FIGHTERS.map((f) => f.id).filter((id) => !used.has(id));
   const botPool = [...preferred, ...fallback.filter((id) => !preferred.includes(id))];
 
-  // Practice mode uses a gentle training dummy regardless of difficulty.
-  const botDifficulty: Difficulty = sel.mode === 'practice' ? 'easy' : sel.difficulty;
-
   let poolIndex = 0;
   while (fighters.length < total) {
     const id = botPool[poolIndex % botPool.length];
     poolIndex += 1;
     if (used.has(id) && botPool.length >= total) continue;
     used.add(id);
-    fighters.push({ configId: id, isPlayer: false, difficulty: botDifficulty });
+    fighters.push({ configId: id, isPlayer: false, difficulty: sel.difficulty });
   }
 
   return {

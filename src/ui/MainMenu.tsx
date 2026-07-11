@@ -2,11 +2,18 @@
  * MainMenu — the entry screen. Play / Practice / Settings / Credits.
  */
 import { useGame } from '@/state/gameStore';
+import { useDebug } from '@/state/debugStore';
 import { audioManager } from '@/systems/audio/AudioManager';
+import { useTripleTap } from './useTripleTap';
 
 export function MainMenu() {
   const goto = useGame((s) => s.goto);
   const setMode = useGame((s) => s.setMode);
+  const unlockDebug = useDebug((s) => s.unlock);
+  const onLogoTap = useTripleTap(() => {
+    audioManager.play('confirm');
+    unlockDebug();
+  });
 
   const start = (mode: 'play' | 'practice'): void => {
     audioManager.play('confirm');
@@ -19,7 +26,9 @@ export function MainMenu() {
   return (
     <div className="menu">
       <div>
-        <h1 className="title">MODULO FIGHT</h1>
+        <h1 className="title tappable" onClick={onLogoTap} title="Modulo Fight">
+          MODULO FIGHT
+        </h1>
         <div className="subtitle">Voxel Arena Brawler</div>
       </div>
       <div className="menu-buttons">

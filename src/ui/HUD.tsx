@@ -60,9 +60,15 @@ export function HUD() {
                 {f.eliminated ? 'OUT' : `${Math.round(f.damage)}%`}
               </div>
               <div className="hud-stocks">
-                {Array.from({ length: f.stocks }).map((_, i) => (
-                  <span key={i} className="hud-stock" style={{ background: f.accent }} />
-                ))}
+                {f.stocks > 6 ? (
+                  <span className="hud-stock-count" style={{ color: f.accent }}>
+                    ∞
+                  </span>
+                ) : (
+                  Array.from({ length: f.stocks }).map((_, i) => (
+                    <span key={i} className="hud-stock" style={{ background: f.accent }} />
+                  ))
+                )}
               </div>
               <div className={`hud-ult ${f.ultCharge >= 1 ? 'ready' : ''}`}>
                 <div className="hud-ult-fill" style={{ width: `${f.ultCharge * 100}%` }} />

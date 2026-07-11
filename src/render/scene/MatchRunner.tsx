@@ -89,6 +89,12 @@ export function MatchRunner({ sim, beginFrame, endFrame, cameraShake, onFinished
           isPlayer: f.isPlayer,
           ultCharge: f.ultCharge,
           comboCount: f.comboCount,
+          state: f.state,
+          x: f.pos.x,
+          y: f.pos.y,
+          vx: f.vel.x,
+          vy: f.vel.y,
+          grounded: f.grounded,
         })),
       });
     }

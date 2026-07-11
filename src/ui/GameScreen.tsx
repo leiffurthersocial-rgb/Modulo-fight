@@ -17,10 +17,13 @@ import { audioManager } from '@/systems/audio/AudioManager';
 import { DEFAULT_BINDINGS, KeyboardController } from '@/systems/input/KeyboardController';
 import { emptyInput, type InputFrame } from '@/systems/input/InputState';
 import { Simulation } from '@/systems/simulation/Simulation';
+import { useDebug } from '@/state/debugStore';
 import { GameScene } from '@/render/GameScene';
 import { HUD } from './HUD';
 import { PauseMenu } from './PauseMenu';
 import { ControlsLegend } from './Controls';
+import { DebugMenu } from './DebugMenu';
+import { DebugInfo } from './DebugInfo';
 
 export function GameScreen() {
   const selections = useGame((s) => ({
@@ -31,11 +34,14 @@ export function GameScreen() {
     difficulty: s.difficulty,
     stocks: s.stocks,
     timeLimit: s.timeLimit,
+    practiceOpponentId: s.practiceOpponentId,
   }));
   const goto = useGame((s) => s.goto);
   const quality = useSettings((s) => s.quality);
   const cameraShake = useSettings((s) => s.cameraShake);
   const showControls = useSettings((s) => s.showControls);
+  const debugOpen = useDebug((s) => s.open);
+  const setDebugOpen = useDebug((s) => s.setOpen);
 
   const [matchKey, setMatchKey] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -105,6 +111,14 @@ export function GameScreen() {
     });
   }, [keyboard, sim]);
 
+  // Opening the debug menu resumes the match so live tuning is visible.
+  useEffect(() => {
+    if (debugOpen) {
+      setPaused(false);
+      sim.resume();
+    }
+  }, [debugOpen, sim]);
+
   const restart = useCallback(() => {
     setPaused(false);
     setMatchKey((k) => k + 1);
@@ -135,10 +149,11 @@ export function GameScreen() {
       </Canvas>
 
       <HUD />
+      <DebugInfo />
 
-      {showControls && !paused && <ControlsLegend />}
+      {showControls && !paused && !debugOpen && <ControlsLegend />}
 
-      {paused && (
+      {paused && !debugOpen && (
         <PauseMenu
           onResume={() => {
             setPaused(false);
@@ -148,6 +163,9 @@ export function GameScreen() {
           onQuit={() => goto('mainMenu')}
         />
       )}
+
+      {/* Debug menu runs over a *live* match so tuning is visible immediately. */}
+      {debugOpen && <DebugMenu sim={sim} onClose={() => setDebugOpen(false)} />}
     </div>
   );
 }

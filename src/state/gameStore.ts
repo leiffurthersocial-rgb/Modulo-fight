@@ -22,6 +22,13 @@ export interface HudFighter {
   isPlayer: boolean;
   ultCharge: number;
   comboCount: number;
+  /** Debug-only live state (populated for the fighter-info overlay). */
+  state: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  grounded: boolean;
 }
 
 export interface HudSnapshot {
@@ -40,6 +47,8 @@ interface GameState {
   difficulty: Difficulty;
   stocks: number;
   timeLimit: number;
+  /** Practice mode: which fighter the training dummy uses. */
+  practiceOpponentId: string;
 
   // HUD snapshot (throttled from the simulation).
   hud: HudSnapshot;
@@ -59,6 +68,7 @@ interface GameState {
   setStocks: (n: number) => void;
   setTimeLimit: (n: number) => void;
   setBotFighters: (ids: string[]) => void;
+  setPracticeOpponent: (id: string) => void;
   setHudSnapshot: (snap: HudSnapshot) => void;
   setResults: (placements: GameState['resultPlacements']) => void;
   setFps: (fps: number) => void;
@@ -82,6 +92,7 @@ export const useGame = create<GameState>((set) => ({
   difficulty: 'normal',
   stocks: DEFAULT_STOCKS,
   timeLimit: DEFAULT_TIME_LIMIT,
+  practiceOpponentId: 'leif',
 
   hud: { fighters: [], timeRemaining: DEFAULT_TIME_LIMIT },
   resultPlacements: [],
@@ -95,6 +106,7 @@ export const useGame = create<GameState>((set) => ({
   setStocks: (stocks) => set({ stocks }),
   setTimeLimit: (timeLimit) => set({ timeLimit }),
   setBotFighters: (botFighterIds) => set({ botFighterIds }),
+  setPracticeOpponent: (practiceOpponentId) => set({ practiceOpponentId }),
   setHudSnapshot: (hud) => set({ hud }),
   setResults: (resultPlacements) => set({ resultPlacements }),
   setFps: (fps) => set({ fps }),
