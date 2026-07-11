@@ -78,6 +78,13 @@ export interface FighterRuntime {
 
   /** Practice/debug: immune to knockback and launch (combo practice). */
   immovable: boolean;
+
+  /** Lifetime stats — never reset by respawn, used for post-match balance data. */
+  totalDamageDealt: number;
+  totalDamageTaken: number;
+  koCount: number;
+  /** Id of whoever landed the most recent hit (credited on a ring-out KO). */
+  lastHitBy: string | null;
 }
 
 export function createFighterRuntime(
@@ -117,6 +124,10 @@ export function createFighterRuntime(
     hitFlash: 0,
     ultCharge: 0,
     immovable: false,
+    totalDamageDealt: 0,
+    totalDamageTaken: 0,
+    koCount: 0,
+    lastHitBy: null,
   };
 }
 

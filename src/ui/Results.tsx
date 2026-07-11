@@ -33,9 +33,20 @@ export function Results() {
                     height: 34,
                     background: `linear-gradient(160deg, ${f.appearance.shirt}, ${f.appearance.accent})`,
                   }}
-                />
-                <span style={{ fontWeight: 700 }}>{f.name}</span>
-                <span className="fighter-role">{f.role}</span>
+                >
+                  <span className="fighter-emoji" style={{ fontSize: 18 }}>
+                    {f.emoji}
+                  </span>
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700 }}>{f.name}</div>
+                  <div className="fighter-role">{f.role}</div>
+                </div>
+                <div className="result-stats">
+                  <span title="Damage dealt">💥 {p.damageDealt}%</span>
+                  <span title="Damage taken">🩹 {p.damageTaken}%</span>
+                  <span title="KOs scored">☠️ {p.kos}</span>
+                </div>
               </div>
             );
           })}

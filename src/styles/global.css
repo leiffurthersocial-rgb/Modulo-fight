@@ -666,6 +666,23 @@ input[type='range']::-moz-range-thumb {
   color: var(--text);
 }
 
+.remap-btn {
+  cursor: pointer;
+  min-width: 64px;
+  transition: all 0.12s ease;
+}
+
+.remap-btn:hover {
+  border-color: var(--accent);
+  background: rgba(90, 209, 255, 0.14);
+}
+
+.remap-btn.listening {
+  border-color: var(--accent-2);
+  background: rgba(255, 213, 74, 0.18);
+  animation: bannerPulse 0.9s ease-in-out infinite;
+}
+
 .hud-top {
   position: absolute;
   top: 16px;
@@ -730,6 +747,15 @@ input[type='range']::-moz-range-thumb {
   font-weight: 800;
   width: 44px;
   color: var(--accent-2);
+}
+
+.result-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  white-space: nowrap;
 }
 
 .controls-grid {

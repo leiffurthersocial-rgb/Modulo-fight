@@ -12,9 +12,9 @@ import { Canvas } from '@react-three/fiber';
 import { getFighter } from '@/fighters/fighterData';
 import { buildMatchConfig } from '@/game/matchSetup';
 import { useGame } from '@/state/gameStore';
-import { useSettings } from '@/state/settingsStore';
+import { resolveBindings, useSettings } from '@/state/settingsStore';
 import { audioManager } from '@/systems/audio/AudioManager';
-import { DEFAULT_BINDINGS, KeyboardController } from '@/systems/input/KeyboardController';
+import { KeyboardController } from '@/systems/input/KeyboardController';
 import { emptyInput, type InputFrame } from '@/systems/input/InputState';
 import { Simulation } from '@/systems/simulation/Simulation';
 import { useDebug } from '@/state/debugStore';
@@ -42,16 +42,31 @@ export function GameScreen() {
   const quality = useSettings((s) => s.quality);
   const cameraShake = useSettings((s) => s.cameraShake);
   const showControls = useSettings((s) => s.showControls);
+  const batterySaver = useSettings((s) => s.batterySaver);
+  const autoPauseOnBlur = useSettings((s) => s.autoPauseOnBlur);
+  const keyOverrides = useSettings((s) => s.keyOverrides);
   const debugOpen = useDebug((s) => s.open);
   const setDebugOpen = useDebug((s) => s.setOpen);
+
+  // Battery saver overrides quality/effects regardless of the Quality setting.
+  const effectiveQuality = batterySaver ? 'low' : quality;
+  const effectiveCameraShake = cameraShake && !batterySaver;
+  const effectsScale = batterySaver ? 0.35 : 1;
 
   const [matchKey, setMatchKey] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  // Input plumbing shared with the simulation.
-  const keyboard = useMemo(() => new KeyboardController(DEFAULT_BINDINGS), []);
+  // Input plumbing shared with the simulation. Initial bindings only — later
+  // rebinds are applied live by the effect below via keyboard.setBindings.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const keyboard = useMemo(() => new KeyboardController(resolveBindings(keyOverrides)), []);
   const frameRef = useRef<InputFrame>(emptyInput());
   const consumedRef = useRef(false);
+
+  // Live-apply key rebinds without needing to restart the match.
+  useEffect(() => {
+    keyboard.setBindings(resolveBindings(keyOverrides));
+  }, [keyboard, keyOverrides]);
 
   const playerInput = useCallback((): InputFrame => {
     if (consumedRef.current) {
@@ -121,6 +136,24 @@ export function GameScreen() {
     }
   }, [debugOpen, sim]);
 
+  // Auto-pause when the tab loses focus or is hidden, so a match never keeps
+  // running (and draining battery) unattended.
+  useEffect(() => {
+    if (!autoPauseOnBlur) return;
+    const pauseIfRunning = (): void => {
+      if (document.hidden && sim.status === 'running') {
+        setPaused(true);
+        sim.pause();
+      }
+    };
+    document.addEventListener('visibilitychange', pauseIfRunning);
+    window.addEventListener('blur', pauseIfRunning);
+    return () => {
+      document.removeEventListener('visibilitychange', pauseIfRunning);
+      window.removeEventListener('blur', pauseIfRunning);
+    };
+  }, [autoPauseOnBlur, sim]);
+
   const restart = useCallback(() => {
     setPaused(false);
     setMatchKey((k) => k + 1);
@@ -134,16 +167,17 @@ export function GameScreen() {
   return (
     <div className="app">
       <Canvas
-        shadows={quality !== 'low'}
-        dpr={quality === 'high' ? [1, 2] : [1, 1.5]}
-        gl={{ antialias: quality === 'high', powerPreference: 'high-performance' }}
+        shadows={effectiveQuality !== 'low'}
+        dpr={batterySaver ? 1 : effectiveQuality === 'high' ? [1, 2] : [1, 1.5]}
+        gl={{ antialias: effectiveQuality === 'high', powerPreference: batterySaver ? 'low-power' : 'high-performance' }}
         camera={{ position: [0, 4, 24], fov: 42 }}
       >
         <GameScene
           key={matchKey}
           sim={sim}
-          quality={quality}
-          cameraShake={cameraShake}
+          quality={effectiveQuality}
+          cameraShake={effectiveCameraShake}
+          effectsScale={effectsScale}
           beginFrame={beginFrame}
           endFrame={endFrame}
           onFinished={onFinished}

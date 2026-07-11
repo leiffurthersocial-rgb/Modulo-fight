@@ -134,6 +134,10 @@ function applyHit(
   }
 
   victim.damage = clamp(victim.damage + damage, 0, 999);
+  // Lifetime stats for post-match balance data — never reset by respawn.
+  attacker.totalDamageDealt += damage;
+  victim.totalDamageTaken += damage;
+  victim.lastHitBy = attacker.config.id;
 
   // --- Knockback ---------------------------------------------------------
   let kb = knockbackMagnitude(attack, victim);

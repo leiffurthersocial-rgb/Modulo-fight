@@ -8,9 +8,14 @@
 import type { ArenaConfig } from '@/core/types';
 import { ThemedArena } from './ThemedArena';
 
-const OVERRIDES: Record<string, (props: { arena: ArenaConfig }) => JSX.Element> = {};
+interface ArenaRendererProps {
+  arena: ArenaConfig;
+  effectsScale?: number;
+}
 
-export function ArenaView({ arena }: { arena: ArenaConfig }) {
+const OVERRIDES: Record<string, (props: ArenaRendererProps) => JSX.Element> = {};
+
+export function ArenaView({ arena, effectsScale = 1 }: ArenaRendererProps) {
   const Renderer = OVERRIDES[arena.id] ?? ThemedArena;
-  return <Renderer arena={arena} />;
+  return <Renderer arena={arena} effectsScale={effectsScale} />;
 }

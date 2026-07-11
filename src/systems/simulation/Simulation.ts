@@ -295,9 +295,14 @@ export class Simulation {
     if (f.eliminated || f.respawnTimer > 0) return;
     if (!crossedBlastZone(f, this.config.arena)) return;
 
-    // Ring-out: lose a stock.
+    // Ring-out: lose a stock. Credit the KO to whoever landed the last hit.
     f.stocks -= 1;
     this.events.emit({ type: 'knockout', pos: { ...f.pos }, victimId: f.config.id });
+    if (f.lastHitBy) {
+      const koer = this.fighters.find((x) => x.config.id === f.lastHitBy);
+      if (koer) koer.koCount += 1;
+      f.lastHitBy = null;
+    }
 
     if (f.stocks <= 0) {
       f.eliminated = true;

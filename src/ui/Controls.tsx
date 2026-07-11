@@ -1,58 +1,39 @@
 /**
- * Controls — single source of truth for the control scheme plus reusable
- * display components (a menu card and an in-game legend). Keeping the mapping
- * here means the menus, pause screen and HUD legend never disagree.
+ * Controls — reusable control-scheme display components.
+ *
+ * Reads the player's *effective* bindings (defaults + any custom remaps from
+ * Settings) so the menu cards, pause screen and in-game legend always show the
+ * key that will actually work — never a stale default after a remap.
  */
+import { useMemo } from 'react';
+import { resolveBindings, useSettings } from '@/state/settingsStore';
+import type { Action } from '@/systems/input/KeyboardController';
 
-export interface ControlEntry {
+/** Turn a KeyboardEvent.code into a short, readable label. */
+export function codeLabel(code: string): string {
+  if (code.startsWith('Key')) return code.slice(3);
+  if (code.startsWith('Digit')) return code.slice(5);
+  if (code.startsWith('Arrow')) return code.slice(5);
+  return code;
+}
+
+/** Resolve the primary (first) key label for an action from live settings. */
+function usePrimaryKey(): (action: Action) => string {
+  const overrides = useSettings((s) => s.keyOverrides);
+  const bindings = useMemo(() => resolveBindings(overrides), [overrides]);
+  return (action: Action) => codeLabel(bindings[action][0]);
+}
+
+interface ControlEntry {
   action: string;
   keys: string[];
 }
 
-/** Grouped controls for clear presentation. */
-export const CONTROL_GROUPS: { title: string; entries: ControlEntry[] }[] = [
-  {
-    title: 'Move',
-    entries: [
-      { action: 'Move', keys: ['W', 'A', 'S', 'D'] },
-      { action: 'Jump / Double Jump', keys: ['Space'] },
-      { action: 'Sprint', keys: ['Shift'] },
-      { action: 'Dash', keys: ['I'] },
-      { action: 'Dodge', keys: ['H'] },
-    ],
-  },
-  {
-    title: 'Fight',
-    entries: [
-      { action: 'Light Attack', keys: ['J'] },
-      { action: 'Heavy Attack', keys: ['K'] },
-      { action: 'Special', keys: ['L'] },
-      { action: 'Ultimate', keys: ['U'] },
-      { action: 'Shield', keys: ['G'] },
-    ],
-  },
-  {
-    title: 'System',
-    entries: [{ action: 'Pause', keys: ['P'] }],
-  },
-];
-
-/** Compact key list used in the in-game legend. */
-export const QUICK_LEGEND: ControlEntry[] = [
-  { action: 'Move', keys: ['W', 'A', 'S', 'D'] },
-  { action: 'Jump', keys: ['Space'] },
-  { action: 'Light / Heavy', keys: ['J', 'K'] },
-  { action: 'Special / Ult', keys: ['L', 'U'] },
-  { action: 'Dash / Dodge', keys: ['I', 'H'] },
-  { action: 'Shield', keys: ['G'] },
-  { action: 'Pause', keys: ['P'] },
-];
-
 function Keys({ keys }: { keys: string[] }) {
   return (
     <span style={{ display: 'inline-flex', gap: 4 }}>
-      {keys.map((k) => (
-        <span key={k} className="kbd">
+      {keys.map((k, i) => (
+        <span key={i} className="kbd">
           {k}
         </span>
       ))}
@@ -62,9 +43,37 @@ function Keys({ keys }: { keys: string[] }) {
 
 /** A full, grouped controls card for menus and the pause screen. */
 export function ControlsCard() {
+  const key = usePrimaryKey();
+  const groups: { title: string; entries: ControlEntry[] }[] = [
+    {
+      title: 'Move',
+      entries: [
+        { action: 'Move', keys: [key('up'), key('left'), key('down'), key('right')] },
+        { action: 'Jump / Double Jump', keys: [key('jump')] },
+        { action: 'Sprint', keys: [key('sprint')] },
+        { action: 'Dash', keys: [key('dash')] },
+        { action: 'Dodge', keys: [key('dodge')] },
+      ],
+    },
+    {
+      title: 'Fight',
+      entries: [
+        { action: 'Light Attack', keys: [key('light')] },
+        { action: 'Heavy Attack', keys: [key('heavy')] },
+        { action: 'Special', keys: [key('special')] },
+        { action: 'Ultimate', keys: [key('ultimate')] },
+        { action: 'Shield', keys: [key('shield')] },
+      ],
+    },
+    {
+      title: 'System',
+      entries: [{ action: 'Pause', keys: [key('pause')] }],
+    },
+  ];
+
   return (
     <div className="controls-card">
-      {CONTROL_GROUPS.map((group) => (
+      {groups.map((group) => (
         <div key={group.title} className="controls-group">
           <div className="controls-group-title">{group.title}</div>
           {group.entries.map((e) => (
@@ -81,10 +90,21 @@ export function ControlsCard() {
 
 /** A small always-visible legend shown during a match. */
 export function ControlsLegend() {
+  const key = usePrimaryKey();
+  const entries: ControlEntry[] = [
+    { action: 'Move', keys: [key('up'), key('left'), key('down'), key('right')] },
+    { action: 'Jump', keys: [key('jump')] },
+    { action: 'Light / Heavy', keys: [key('light'), key('heavy')] },
+    { action: 'Special / Ult', keys: [key('special'), key('ultimate')] },
+    { action: 'Dash / Dodge', keys: [key('dash'), key('dodge')] },
+    { action: 'Shield', keys: [key('shield')] },
+    { action: 'Pause', keys: [key('pause')] },
+  ];
+
   return (
     <div className="controls-legend">
       <div className="cl-title">Controls</div>
-      {QUICK_LEGEND.map((e) => (
+      {entries.map((e) => (
         <div key={e.action} className="cl-row">
           <span>{e.action}</span>
           <span className="cl-key">{e.keys.join(' ')}</span>
