@@ -34,7 +34,9 @@ export function GameScreen() {
     difficulty: s.difficulty,
     stocks: s.stocks,
     timeLimit: s.timeLimit,
+    duelOpponentId: s.duelOpponentId,
     practiceOpponentId: s.practiceOpponentId,
+    practiceStocks: s.practiceStocks,
   }));
   const goto = useGame((s) => s.goto);
   const quality = useSettings((s) => s.quality);

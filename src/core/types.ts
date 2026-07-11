@@ -76,6 +76,8 @@ export interface FighterStats {
 export interface AttackData {
   kind: AttackKind;
   name: string;
+  /** Player-facing description of what the move does and how it feels. */
+  description?: string;
   /** Seconds before the hitbox becomes active. */
   startup: number;
   /** Seconds the hitbox stays active. */
@@ -120,6 +122,8 @@ export interface FighterAppearance {
   hairStyle: 'short' | 'medium' | 'styled' | 'goatee';
   eyes: string;
   shirt: string;
+  /** Trouser colour (falls back to a neutral dark if omitted). */
+  pants?: string;
   /** Optional accessory flags. */
   glasses?: boolean;
   goatee?: boolean;
@@ -132,6 +136,10 @@ export interface FighterConfig {
   id: string;
   name: string;
   role: string;
+  /** Emoji shown on the character-select card. */
+  emoji: string;
+  /** One-line playstyle summary for the select screen. */
+  blurb: string;
   personality: string;
   stats: FighterStats;
   passive: PassiveId;

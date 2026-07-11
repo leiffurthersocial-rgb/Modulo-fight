@@ -100,15 +100,17 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
     return pieces;
   }, [appearance]);
 
+  const pants = appearance.pants ?? '#2a2a30';
+
   return (
     <group>
       {/* Legs (pivot at hip, extend downward). */}
       <group ref={legL} position={[-0.16, 0.55, 0]}>
-        <Box args={[0.26, 0.55, 0.28]} position={[0, -0.28, 0]} color={'#2a2a30'} matRef={collect} />
+        <Box args={[0.26, 0.55, 0.28]} position={[0, -0.28, 0]} color={pants} matRef={collect} />
         <Box args={[0.28, 0.12, 0.34]} position={[0, -0.56, 0.03]} color={'#1a1a1e'} matRef={collect} />
       </group>
       <group ref={legR} position={[0.16, 0.55, 0]}>
-        <Box args={[0.26, 0.55, 0.28]} position={[0, -0.28, 0]} color={'#2a2a30'} matRef={collect} />
+        <Box args={[0.26, 0.55, 0.28]} position={[0, -0.28, 0]} color={pants} matRef={collect} />
         <Box args={[0.28, 0.12, 0.34]} position={[0, -0.56, 0.03]} color={'#1a1a1e'} matRef={collect} />
       </group>
 

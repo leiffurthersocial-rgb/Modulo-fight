@@ -47,8 +47,12 @@ interface GameState {
   difficulty: Difficulty;
   stocks: number;
   timeLimit: number;
+  /** 1v1: chosen opponent id, or 'random' to pick a random one each match. */
+  duelOpponentId: string;
   /** Practice mode: which fighter the training dummy uses. */
   practiceOpponentId: string;
+  /** Practice mode: stocks/lives (99 = unlimited). */
+  practiceStocks: number;
 
   // HUD snapshot (throttled from the simulation).
   hud: HudSnapshot;
@@ -68,7 +72,9 @@ interface GameState {
   setStocks: (n: number) => void;
   setTimeLimit: (n: number) => void;
   setBotFighters: (ids: string[]) => void;
+  setDuelOpponent: (id: string) => void;
   setPracticeOpponent: (id: string) => void;
+  setPracticeStocks: (n: number) => void;
   setHudSnapshot: (snap: HudSnapshot) => void;
   setResults: (placements: GameState['resultPlacements']) => void;
   setFps: (fps: number) => void;
@@ -92,7 +98,9 @@ export const useGame = create<GameState>((set) => ({
   difficulty: 'normal',
   stocks: DEFAULT_STOCKS,
   timeLimit: DEFAULT_TIME_LIMIT,
+  duelOpponentId: 'random',
   practiceOpponentId: 'leif',
+  practiceStocks: 3,
 
   hud: { fighters: [], timeRemaining: DEFAULT_TIME_LIMIT },
   resultPlacements: [],
@@ -106,7 +114,9 @@ export const useGame = create<GameState>((set) => ({
   setStocks: (stocks) => set({ stocks }),
   setTimeLimit: (timeLimit) => set({ timeLimit }),
   setBotFighters: (botFighterIds) => set({ botFighterIds }),
+  setDuelOpponent: (duelOpponentId) => set({ duelOpponentId }),
   setPracticeOpponent: (practiceOpponentId) => set({ practiceOpponentId }),
+  setPracticeStocks: (practiceStocks) => set({ practiceStocks }),
   setHudSnapshot: (hud) => set({ hud }),
   setResults: (resultPlacements) => set({ resultPlacements }),
   setFps: (fps) => set({ fps }),

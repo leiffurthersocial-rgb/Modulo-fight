@@ -68,82 +68,94 @@ export function deriveAttackStyle(attack: AttackData): AttackStyle {
 /** Pose an attack of a given style. `p` progresses 0→1 over the whole move. */
 function attackPose(style: AttackStyle, p: number, time: number, facing: number): Pose {
   const o: Pose = { ...IDLE, armLeft: 0, armRight: 0 };
-  const swing = Math.sin(Math.min(p, 1) * Math.PI); // 0→1→0 over the move
-  const wind = Math.min(p / 0.35, 1); // wind-up ramp
-  const strike = Math.max(0, (p - 0.35) / 0.65); // strike ramp
+  // Three clear phases so every attack reads as wind-up → strike → recover.
+  const wind = Math.min(p / 0.3, 1); // 0→1 over the first 30%
+  const strike = clamp01((p - 0.3) / 0.35); // 0→1 over the active window
+  const recover = clamp01((p - 0.65) / 0.35); // 0→1 during recovery
+  // A crisp 0→1→0 impulse peaking at the moment of impact.
+  const hit = Math.sin(clamp01((p - 0.25) / 0.5) * Math.PI);
 
   switch (style) {
     case 'punch':
-      o.armRight = -1.6 * swing - 0.1;
-      o.armLeft = 0.3 * swing;
-      o.bodyTilt = 0.12 * swing;
-      o.bodyRotY = 0.15 * swing;
+      // Cock the fist back, then drive it fully forward with a hip turn.
+      o.armRight = 0.7 * wind - 2.4 * strike + 1.0 * recover;
+      o.armLeft = -0.2 - 0.5 * strike;
+      o.bodyRotY = -0.3 * wind + 0.5 * strike;
+      o.bodyTilt = 0.22 * hit;
       break;
     case 'uppercut':
-      o.armRight = -0.3 + wind * 0.8 - strike * 3.0; // scoop up
-      o.armLeft = -0.4 * strike;
-      o.bodyY = strike * 0.15;
-      o.bodyTilt = -0.25 * strike;
-      o.squash = 1 + strike * 0.12;
+      // Crouch and load, then a big scooping rising fist.
+      o.armRight = 0.9 * wind - 3.1 * strike + 1.2 * recover;
+      o.armLeft = -0.6 * strike;
+      o.bodyY = -0.12 * wind + 0.22 * strike;
+      o.bodyTilt = 0.15 * wind - 0.3 * strike;
+      o.squash = 1 - 0.12 * wind + 0.14 * strike;
       break;
     case 'kick':
-      o.legRight = -0.3 + wind * 0.5 - strike * 2.2;
-      o.legLeft = 0.3 * strike;
-      o.armLeft = 1.0 * swing;
-      o.armRight = -0.6 * swing;
-      o.bodyTilt = 0.3 * swing;
+      // Chamber the knee, then snap the leg out horizontally.
+      o.legRight = 0.6 * wind - 2.6 * strike + 1.0 * recover;
+      o.legLeft = 0.35 * strike;
+      o.armLeft = 1.3 * hit;
+      o.armRight = -0.8 * hit;
+      o.bodyTilt = 0.4 * hit;
       break;
     case 'spin':
-      o.bodyRotY = p * Math.PI * 2;
-      o.armLeft = 1.7 * Math.sin(p * Math.PI * 2);
-      o.armRight = -1.7 * Math.sin(p * Math.PI * 2);
-      o.legRight = 0.8 * swing;
-      o.bodyTilt = 0.15;
+      // A full whirling rotation with arms flung wide.
+      o.bodyRotY = facing * p * Math.PI * 2;
+      o.armLeft = 1.9 * Math.sin(p * Math.PI * 2);
+      o.armRight = -1.9 * Math.sin(p * Math.PI * 2);
+      o.legRight = -1.0 * hit;
+      o.bodyTilt = 0.2;
       break;
     case 'slam':
-      // Raise both arms overhead, then smash down.
-      o.armLeft = -2.6 * wind + (2.6 - 0.4) * strike;
-      o.armRight = -2.6 * wind + (2.6 - 0.4) * strike;
-      o.bodyY = 0.2 * wind - 0.25 * strike;
-      o.bodyTilt = 0.1 * strike;
-      o.squash = 1 + wind * 0.1 - strike * 0.18;
+      // Both arms raised high overhead, then a full-body smash down.
+      o.armLeft = -2.8 * wind + 2.5 * strike;
+      o.armRight = -2.8 * wind + 2.5 * strike;
+      o.bodyY = 0.28 * wind - 0.32 * strike;
+      o.bodyTilt = 0.12 * strike;
+      o.squash = 1 + 0.12 * wind - 0.22 * strike;
       break;
     case 'dive':
-      // Leap/tuck, then extend into a diving kick.
-      o.legRight = -1.2 * wind + 1.6 * strike;
-      o.legLeft = -1.2 * wind + 0.4 * strike;
-      o.armLeft = -1.8 + strike * 1.0;
-      o.armRight = -1.8 + strike * 1.0;
-      o.bodyTilt = 0.2 + strike * 0.5;
-      o.bodyRotY = strike * Math.PI * 0.4;
+      // Coil up, then extend into a committed diving kick.
+      o.legRight = -1.4 * wind + 2.0 * strike;
+      o.legLeft = -1.4 * wind + 0.5 * strike;
+      o.armLeft = -2.0 + 1.2 * strike;
+      o.armRight = -2.0 + 1.2 * strike;
+      o.bodyTilt = 0.25 + 0.6 * strike;
+      o.bodyRotY = facing * strike * Math.PI * 0.45;
       break;
     case 'barrage': {
-      // Rapid alternating jabs — fast oscillation across the whole move.
-      const osc = Math.sin(time * 42);
-      o.armRight = -1.4 - osc * 0.35;
-      o.armLeft = -1.4 + osc * 0.35;
-      o.bodyTilt = 0.12;
+      // A machine-gun flurry of alternating straight punches.
+      const osc = Math.sin(time * 46);
+      o.armRight = -1.7 - osc * 0.5;
+      o.armLeft = -1.7 + osc * 0.5;
+      o.bodyRotY = osc * 0.2;
+      o.bodyTilt = 0.14;
       break;
     }
     case 'charge':
-      // Big wind-up, held, then one heavy forward drive.
-      o.armRight = -0.2 + wind * 1.0 - strike * 2.4;
-      o.armLeft = 0.4 * wind;
-      o.bodyTilt = -0.3 * wind + 0.4 * strike;
-      o.bodyY = -0.05 * wind;
-      o.squash = 1 + wind * 0.08;
+      // A long, heavy wind-up, then one thunderous forward drive.
+      o.armRight = 1.1 * wind - 2.8 * strike + 1.2 * recover;
+      o.armLeft = 0.5 * wind - 0.3 * strike;
+      o.bodyTilt = -0.35 * wind + 0.5 * strike;
+      o.bodyY = -0.08 * wind;
+      o.squash = 1 + 0.1 * wind;
       break;
     case 'lunge':
     default:
-      o.armRight = -1.9 * swing;
-      o.armLeft = -0.5 * swing;
-      o.legLeft = -0.6 * swing;
-      o.legRight = 0.6 * swing;
-      o.bodyTilt = 0.4 * swing;
+      // A dashing shoulder-forward strike with a wide stance.
+      o.armRight = -2.2 * hit;
+      o.armLeft = -0.6 * hit;
+      o.legLeft = -0.8 * hit;
+      o.legRight = 0.8 * hit;
+      o.bodyTilt = 0.5 * hit;
       break;
   }
-  void facing;
   return o;
+}
+
+function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 export function computePose(
@@ -174,22 +186,23 @@ export function computePose(
       p.headTilt = Math.sin(time * 1.6) * 0.04;
       break;
     case 'walk': {
-      const s = Math.sin(time * 8) * 0.5;
+      const s = Math.sin(time * 9) * 0.7;
       p.armLeft = s;
       p.armRight = -s;
       p.legLeft = -s;
       p.legRight = s;
-      p.bodyY = Math.abs(Math.sin(time * 8)) * 0.05;
+      p.bodyY = Math.abs(Math.sin(time * 9)) * 0.07;
+      p.bodyTilt = 0.08;
       break;
     }
     case 'run': {
-      const s = Math.sin(time * 13) * 0.9;
+      const s = Math.sin(time * 15) * 1.15;
       p.armLeft = s;
       p.armRight = -s;
       p.legLeft = -s;
       p.legRight = s;
-      p.bodyTilt = 0.22;
-      p.bodyY = Math.abs(Math.sin(time * 13)) * 0.08;
+      p.bodyTilt = 0.32;
+      p.bodyY = Math.abs(Math.sin(time * 15)) * 0.11;
       break;
     }
     case 'jump':
