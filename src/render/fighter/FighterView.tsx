@@ -14,7 +14,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { FIGHTER_HALF_HEIGHT } from '@/core/constants';
 import { clamp, damp } from '@/core/math';
-import type { FighterRuntime } from '@/systems/simulation/FighterRuntime';
+import { effectiveReach, type FighterRuntime } from '@/systems/simulation/FighterRuntime';
 import { computePose, deriveAttackStyle, type AttackStyle } from './poses';
 import { VoxelCharacter, type CharacterRefs } from './VoxelCharacter';
 
@@ -33,8 +33,23 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
   const trailMat = useRef<THREE.MeshBasicMaterial>(null!);
   const shield = useRef<THREE.Mesh>(null!);
   const shieldMat = useRef<THREE.MeshBasicMaterial>(null!);
+  const swing = useRef<THREE.Mesh>(null!);
+  const swingMat = useRef<THREE.MeshBasicMaterial>(null!);
+  const ultRing = useRef<THREE.Mesh>(null!);
+  const ultRingMat = useRef<THREE.MeshBasicMaterial>(null!);
   const charRef = useRef<CharacterRefs>(null!);
   const accent = useMemo(() => new THREE.Color(runtime.config.appearance.accent), [runtime]);
+  // Slash tint per attack slot: jabs read white-hot, committal moves read in the
+  // fighter's accent, ultimates in blazing gold-tinted accent.
+  const swingColors = useMemo(() => {
+    const acc = new THREE.Color(runtime.config.appearance.accent);
+    return {
+      light: new THREE.Color('#ffffff'),
+      heavy: acc.clone().lerp(new THREE.Color('#ffffff'), 0.35),
+      special: acc.clone().lerp(new THREE.Color('#ffffff'), 0.15),
+      ultimate: acc.clone().lerp(new THREE.Color('#ffd54a'), 0.55),
+    } as const;
+  }, [runtime]);
   // Precompute an animation style per attack slot so each move looks distinct.
   const attackStyles = useMemo<Record<string, AttackStyle>>(() => {
     const a = runtime.config.attacks;
@@ -102,8 +117,13 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
     c.legL.rotation.x = pose.legLeft;
     c.legR.rotation.x = pose.legRight;
 
-    // --- Material emissive: hit flash + ultimate glow ----------------------
-    const glow = runtime.ultCharge >= 1 ? 0.4 + Math.sin(performance.now() / 120) * 0.2 : 0;
+    // --- Material emissive: hit flash > ultimate execution > charged glow --
+    const ultActive = runtime.attack?.data.kind === 'ultimate';
+    const glow = ultActive
+      ? 1.1 + Math.sin(performance.now() / 60) * 0.35
+      : runtime.ultCharge >= 1
+        ? 0.4 + Math.sin(performance.now() / 120) * 0.2
+        : 0;
     for (const mm of c.materials) {
       if (runtime.hitFlash > 0) {
         mm.emissive.copy(flashColor);
@@ -113,6 +133,56 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
         mm.emissiveIntensity = glow;
       } else if (mm.emissiveIntensity !== 0) {
         mm.emissiveIntensity = 0;
+      }
+    }
+
+    // --- Attack swing slash --------------------------------------------------
+    // A crescent arc drawn at the hitbox during the active window (with a short
+    // linger), so every strike — and its actual range — is visible, not implied.
+    if (swing.current && swingMat.current) {
+      const atk = runtime.attack;
+      const linger = 0.07;
+      if (atk && atk.elapsed >= atk.data.startup) {
+        const p = clamp((atk.elapsed - atk.data.startup) / (atk.data.active + linger), 0, 1);
+        if (p < 1) {
+          swing.current.visible = true;
+          const reach = effectiveReach(runtime, atk.data);
+          const kind = atk.data.kind;
+          const sc = (reach + atk.data.radius * 0.6) * (kind === 'ultimate' ? 1.25 : 1);
+          swing.current.position.set(runtime.facing * 0.25, atk.data.yOffset + FIGHTER_HALF_HEIGHT, 0.35);
+          // Mirroring via scale.x flips the arc with facing; rotation sweeps it.
+          swing.current.scale.set(runtime.facing * sc, sc, 1);
+          swing.current.rotation.z = (0.5 - p) * 1.3;
+          swingMat.current.color.copy(swingColors[kind]);
+          swingMat.current.opacity =
+            Math.sin(Math.min(p, 1) * Math.PI) * (kind === 'ultimate' ? 0.95 : kind === 'light' ? 0.5 : 0.75);
+        } else {
+          swing.current.visible = false;
+        }
+      } else {
+        swing.current.visible = false;
+      }
+    }
+
+    // --- Ultimate telegraph + shock ring -------------------------------------
+    // During startup a ring converges inward (clear "it's coming" warning);
+    // during the strike it blasts outward. Reads at a glance from any zoom.
+    if (ultRing.current && ultRingMat.current) {
+      const atk = runtime.attack;
+      if (atk && atk.data.kind === 'ultimate') {
+        const total = atk.data.startup + atk.data.active + atk.data.recovery * 0.5;
+        const winding = atk.elapsed < atk.data.startup;
+        const wp = winding
+          ? 1 - atk.elapsed / atk.data.startup // 1 → 0 converging
+          : clamp((atk.elapsed - atk.data.startup) / (total - atk.data.startup), 0, 1);
+        ultRing.current.visible = true;
+        const sc = winding ? 0.9 + wp * 2.4 : 1 + wp * 3.6;
+        ultRing.current.scale.set(sc, sc, 1);
+        ultRing.current.position.y = 0.06;
+        ultRingMat.current.color.copy(swingColors.ultimate);
+        ultRingMat.current.opacity = winding ? 0.75 : (1 - wp) * 0.8;
+      } else {
+        ultRing.current.visible = false;
       }
     }
 
@@ -199,6 +269,32 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
           opacity={0}
           depthWrite={false}
           toneMapped={false}
+        />
+      </mesh>
+      {/* Attack swing slash — a crescent arc at the live hitbox. */}
+      <mesh ref={swing} visible={false}>
+        <ringGeometry args={[0.55, 1, 24, 1, -0.95, 1.9]} />
+        <meshBasicMaterial
+          ref={swingMat}
+          color="#ffffff"
+          transparent
+          opacity={0}
+          depthWrite={false}
+          toneMapped={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {/* Ultimate telegraph / shock ring on the ground. */}
+      <mesh ref={ultRing} visible={false} position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.78, 1, 40]} />
+        <meshBasicMaterial
+          ref={ultRingMat}
+          color="#ffd54a"
+          transparent
+          opacity={0}
+          depthWrite={false}
+          toneMapped={false}
+          side={THREE.DoubleSide}
         />
       </mesh>
     </group>

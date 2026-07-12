@@ -42,7 +42,7 @@ export function MatchRunner({ sim, beginFrame, endFrame, cameraShake, onFinished
     const unsub = sim.events.subscribe((e) => {
       if (!cameraShake) return;
       if (e.type === 'knockout') shake.current = Math.min(shake.current + 0.9, 1.4);
-      else if (e.type === 'ultimate') shake.current = Math.min(shake.current + 0.6, 1.2);
+      else if (e.type === 'ultimate') shake.current = Math.min(shake.current + 0.85, 1.3);
       else if (e.type === 'hit' && e.power > 12) shake.current = Math.min(shake.current + 0.25, 0.8);
     });
     return unsub;

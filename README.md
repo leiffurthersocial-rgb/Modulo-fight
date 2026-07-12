@@ -20,6 +20,10 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
   whole arc, impact freeze-frames (hitstop) scaled by power, directional
   influence to survive knockback, accent-tinted hit sparks, shockwave impact
   rings, landing dust, motion streaks, shield domes and a live combo counter.
+- **Readable attacks** — every strike draws a visible swing arc at its real
+  hitbox; ultimates telegraph with a converging ground ring, set the fighter
+  ablaze in their accent colour, blast an outward shock ring and flash the
+  screen — you can't miss one, even zoomed out.
 - **Dynamic arena camera** — Smash-style auto-zoom that always keeps every
   fighter framed, with cinematic smoothing and impact shake.
 - **Human-like AI** — four difficulty tiers (Easy → Insane) that approach,

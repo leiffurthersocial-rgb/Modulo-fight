@@ -259,8 +259,11 @@ export class Simulation {
             this.events.emit({ type: 'ultimate', pos: { ...f.pos }, fighterId: f.config.id });
         } else if (input.special) {
           if (tryStartAttack(f, 'special')) this.events.emit({ type: 'special', pos: { ...f.pos }, fighterId: f.config.id });
-        } else if (input.heavy) tryStartAttack(f, 'heavy');
-        else if (input.light) tryStartAttack(f, 'light');
+        } else if (input.heavy) {
+          if (tryStartAttack(f, 'heavy')) this.events.emit({ type: 'attack', pos: { ...f.pos }, kind: 'heavy' });
+        } else if (input.light) {
+          if (tryStartAttack(f, 'light')) this.events.emit({ type: 'attack', pos: { ...f.pos }, kind: 'light' });
+        }
       }
     } else if (f.shielding) {
       // Drop shield if we got hit / became busy.

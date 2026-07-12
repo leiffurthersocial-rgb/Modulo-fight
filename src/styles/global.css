@@ -61,9 +61,54 @@ button {
   align-items: center;
   justify-content: center;
   gap: 28px;
-  background: radial-gradient(1200px 800px at 50% -10%, #1c2a5a 0%, var(--bg) 60%);
+  background:
+    radial-gradient(900px 500px at 15% 110%, rgba(124, 92, 255, 0.12) 0%, transparent 60%),
+    radial-gradient(900px 500px at 85% 100%, rgba(90, 209, 255, 0.1) 0%, transparent 60%),
+    radial-gradient(1200px 800px at 50% -10%, #1c2a5a 0%, var(--bg) 60%);
   padding: 24px;
   overflow-y: auto;
+}
+
+/* Slow drifting glow orbs behind the hero menu — pure CSS, zero JS cost. */
+.menu-hero::before,
+.menu-hero::after {
+  content: '';
+  position: absolute;
+  width: 46vmax;
+  height: 46vmax;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(70px);
+  opacity: 0.16;
+  z-index: 0;
+}
+
+.menu-hero::before {
+  background: radial-gradient(circle, var(--accent) 0%, transparent 65%);
+  top: -18vmax;
+  left: -12vmax;
+  animation: orbDrift 14s ease-in-out infinite alternate;
+}
+
+.menu-hero::after {
+  background: radial-gradient(circle, var(--accent-2) 0%, transparent 65%);
+  bottom: -20vmax;
+  right: -12vmax;
+  animation: orbDrift 17s ease-in-out infinite alternate-reverse;
+}
+
+.menu-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes orbDrift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(6vmax, 4vmax) scale(1.15);
+  }
 }
 
 .title {
@@ -72,11 +117,73 @@ button {
   letter-spacing: -0.04em;
   line-height: 0.95;
   text-align: center;
-  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  background: linear-gradient(
+    110deg,
+    var(--accent) 0%,
+    #fff 28%,
+    var(--accent-2) 55%,
+    var(--accent) 100%
+  );
+  background-size: 220% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   filter: drop-shadow(0 6px 24px rgba(90, 209, 255, 0.25));
+  animation: titleShimmer 6s linear infinite;
+}
+
+@keyframes titleShimmer {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: -220% 50%;
+  }
+}
+
+/* Staggered entrance for menu items (delay set inline per element). */
+.menu-enter {
+  animation: rise 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Roster strip (main menu) ---- */
+.roster-strip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.roster-strip-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid;
+  transition:
+    transform 0.14s ease,
+    background 0.14s ease;
+  cursor: default;
+}
+
+.roster-strip-chip:hover {
+  transform: translateY(-3px) scale(1.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .subtitle {
@@ -113,16 +220,49 @@ button {
   transform: translateY(-2px);
   border-color: rgba(90, 209, 255, 0.5);
   background: rgba(30, 40, 78, 0.9);
+  box-shadow: 0 6px 22px rgba(90, 209, 255, 0.12);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.97);
 }
 
 .btn.primary {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(120deg, var(--accent), #3aa0ff);
   color: #06111f;
   border: none;
+  box-shadow: 0 8px 26px rgba(90, 209, 255, 0.28);
 }
 
 .btn.primary:hover {
   filter: brightness(1.08);
+  box-shadow: 0 10px 32px rgba(90, 209, 255, 0.42);
+}
+
+/* Sheen sweep across the primary button. */
+.btn.primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  left: -60%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: skewX(-18deg);
+  animation: sheen 3.2s ease-in-out infinite;
+}
+
+@keyframes sheen {
+  0%,
+  55% {
+    left: -60%;
+  }
+  85%,
+  100% {
+    left: 130%;
+  }
 }
 
 .btn.ghost {
@@ -144,6 +284,18 @@ button {
   padding: 28px;
   width: min(920px, 94vw);
   backdrop-filter: blur(10px);
+  animation: panelIn 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .panel h2 {
@@ -236,11 +388,13 @@ button {
 .fighter-card:hover {
   transform: translateY(-3px);
   background: rgba(255, 255, 255, 0.08);
+  border-color: color-mix(in srgb, var(--card-accent, var(--accent)) 55%, transparent);
 }
 
 .fighter-card.active {
-  border-color: var(--accent);
-  background: rgba(90, 209, 255, 0.12);
+  border-color: var(--card-accent, var(--accent));
+  background: color-mix(in srgb, var(--card-accent, var(--accent)) 12%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--card-accent, var(--accent)) 30%, transparent);
 }
 
 .fighter-swatch {
@@ -635,6 +789,27 @@ input[type='range']::-moz-range-thumb {
   }
 }
 
+/* ---- Screen flash (ultimates, KOs) ---- */
+.screen-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 7;
+  animation: flashFade 0.55s ease-out both;
+}
+
+@keyframes flashFade {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* ---- Combat announcements (KO!, ultimate) ---- */
 .announce {
   position: absolute;
@@ -928,6 +1103,28 @@ input[type='range']::-moz-range-thumb {
   padding: 12px 16px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
+  animation: rise 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.result-row:first-child {
+  background: rgba(255, 213, 74, 0.09);
+  border: 1px solid rgba(255, 213, 74, 0.3);
+}
+
+.results-winner {
+  text-shadow: 0 0 26px currentColor;
+  animation: winnerPop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes winnerPop {
+  from {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .result-place {

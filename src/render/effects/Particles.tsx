@@ -149,10 +149,12 @@ export function Particles({ events, maxParticles = DEFAULT_MAX_PARTICLES }: Prop
           spawn(e.pos.x, e.pos.y, 40, 14, [1, 0.4, 0.4], 0.22, 0.9);
           break;
         case 'special':
-          spawn(e.pos.x, e.pos.y, 16, 8, [0.5, 0.8, 1], 0.18, 0.6);
+          spawn(e.pos.x, e.pos.y, 16, 8, accentRgb(e.fighterId), 0.18, 0.6);
           break;
         case 'ultimate':
-          spawn(e.pos.x, e.pos.y, 60, 12, [1, 0.9, 0.3], 0.26, 1);
+          // Double burst: gold core + the fighter's accent halo.
+          spawn(e.pos.x, e.pos.y, 40, 13, [1, 0.9, 0.3], 0.28, 1);
+          spawn(e.pos.x, e.pos.y, 30, 9, accentRgb(e.fighterId), 0.22, 1.1);
           break;
         case 'shield':
           spawn(e.pos.x, e.pos.y, 8, 4, [0.6, 0.9, 1], 0.14, 0.4);

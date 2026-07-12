@@ -5,7 +5,7 @@
  * transitions to the game screen, which reads those selections to build the
  * match.
  */
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import type { Difficulty, GameMode } from '@/core/types';
 import { ARENAS } from '@/arenas/arenaData';
 import { FIGHTERS, getFighter } from '@/fighters/fighterData';
@@ -307,6 +307,7 @@ export function CharacterSelect() {
             <button
               key={f.id}
               className={`fighter-card ${playerFighterId === f.id ? 'active' : ''}`}
+              style={{ '--card-accent': f.appearance.accent } as CSSProperties}
               onClick={() => {
                 audioManager.play('select');
                 setPlayerFighter(f.id);

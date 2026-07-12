@@ -15,8 +15,14 @@ interface Callout {
   color: string;
 }
 
+interface Flash {
+  id: number;
+  color: string;
+}
+
 export function Announcements({ sim }: { sim: Simulation }) {
   const [callouts, setCallouts] = useState<Callout[]>([]);
+  const [flashes, setFlashes] = useState<Flash[]>([]);
 
   useEffect(() => {
     let nextId = 1;
@@ -27,6 +33,15 @@ export function Announcements({ sim }: { sim: Simulation }) {
         setCallouts((cs) => cs.filter((x) => x.id !== id));
       }, 1400);
     };
+    // A brief full-screen accent flash makes ultimates and KOs land visually
+    // even when the camera is zoomed far out.
+    const flash = (color: string): void => {
+      const id = nextId++;
+      setFlashes((fs) => [...fs, { id, color }]);
+      window.setTimeout(() => {
+        setFlashes((fs) => fs.filter((x) => x.id !== id));
+      }, 550);
+    };
     const unsub = sim.events.subscribe((e) => {
       if (e.type === 'knockout') {
         const victim = getFighter(e.victimId);
@@ -36,6 +51,7 @@ export function Announcements({ sim }: { sim: Simulation }) {
           sub: victim.name,
           color: '#ff5d73',
         });
+        flash('#ff5d73');
       } else if (e.type === 'ultimate') {
         const f = getFighter(e.fighterId);
         push({
@@ -44,20 +60,32 @@ export function Announcements({ sim }: { sim: Simulation }) {
           sub: f.attacks.ultimate.name,
           color: f.appearance.accent,
         });
+        flash(f.appearance.accent);
       }
     });
     return unsub;
   }, [sim]);
 
-  if (callouts.length === 0) return null;
+  if (callouts.length === 0 && flashes.length === 0) return null;
   return (
-    <div className="announce">
-      {callouts.map((c) => (
-        <div key={c.id} className={`announce-item announce-${c.kind}`} style={{ color: c.color }}>
-          <span className="announce-text">{c.text}</span>
-          <span className="announce-sub">{c.sub}</span>
-        </div>
+    <>
+      {flashes.map((f) => (
+        <div
+          key={f.id}
+          className="screen-flash"
+          style={{
+            background: `radial-gradient(120vmax circle at 50% 55%, ${f.color}66 0%, ${f.color}22 35%, transparent 70%)`,
+          }}
+        />
       ))}
-    </div>
+      <div className="announce">
+        {callouts.map((c) => (
+          <div key={c.id} className={`announce-item announce-${c.kind}`} style={{ color: c.color }}>
+            <span className="announce-text">{c.text}</span>
+            <span className="announce-sub">{c.sub}</span>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
