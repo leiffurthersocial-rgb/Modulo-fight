@@ -10,7 +10,7 @@ import type { Vec2 } from '@/core/types';
 export type GameEvent =
   | { type: 'hit'; pos: Vec2; power: number; attackerId: string; victimId: string }
   | { type: 'jump'; pos: Vec2 }
-  | { type: 'land'; pos: Vec2 }
+  | { type: 'land'; pos: Vec2; power?: number }
   | { type: 'attack'; pos: Vec2; kind: string }
   | { type: 'special'; pos: Vec2; fighterId: string }
   | { type: 'ultimate'; pos: Vec2; fighterId: string }

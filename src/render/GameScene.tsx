@@ -11,6 +11,7 @@ import type { Simulation } from '@/systems/simulation/Simulation';
 import { ArenaView } from './arena/ArenaView';
 import { FighterView } from './fighter/FighterView';
 import { Particles } from './effects/Particles';
+import { Shockwaves } from './effects/Shockwaves';
 import { HitMarkers } from './effects/HitMarkers';
 import { DebugOverlay } from './effects/DebugOverlay';
 import { Lighting } from './scene/Lighting';
@@ -37,12 +38,16 @@ interface Props {
 function Fighters({ sim }: { sim: Simulation }) {
   const [, force] = useReducer((x: number) => x + 1, 0);
   useEffect(() => sim.events.subscribe((e) => e.type === 'wave' && force()), [sim]);
+  // Approximate ground plane for contact shadows = the main platform's surface.
+  const main = sim.config.arena.platforms[0];
+  const groundY = main.y + main.height / 2;
   return (
     <>
       {sim.fighters.map((f) => (
         <FighterView
           key={f.isPlayer ? 'player' : `opp-${sim.wave}-${f.index}`}
           runtime={f}
+          groundY={groundY}
         />
       ))}
     </>
@@ -70,6 +75,7 @@ export function GameScene({
       <Fighters sim={sim} />
 
       <Particles events={sim.events} maxParticles={Math.round(260 * effectsScale)} />
+      <Shockwaves events={sim.events} />
       {hitMarkers && <HitMarkers events={sim.events} />}
       <DebugOverlay sim={sim} />
 

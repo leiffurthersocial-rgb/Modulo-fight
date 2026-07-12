@@ -11,12 +11,12 @@ export function PostEffects({ quality }: { quality: Quality }) {
   return (
     <EffectComposer enableNormalPass={false} multisampling={quality === 'high' ? 4 : 0}>
       <Bloom
-        intensity={quality === 'high' ? 0.7 : 0.45}
-        luminanceThreshold={0.6}
-        luminanceSmoothing={0.25}
+        intensity={quality === 'high' ? 0.85 : 0.55}
+        luminanceThreshold={0.55}
+        luminanceSmoothing={0.3}
         mipmapBlur
       />
-      <Vignette eskil={false} offset={0.15} darkness={0.55} />
+      <Vignette eskil={false} offset={0.18} darkness={0.6} />
     </EffectComposer>
   );
 }

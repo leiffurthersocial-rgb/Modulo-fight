@@ -591,6 +591,139 @@ input[type='range']::-moz-range-thumb {
   }
 }
 
+/* ---- Combo counter ---- */
+.combo {
+  position: absolute;
+  top: 18%;
+  right: 8%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.9;
+  pointer-events: none;
+  animation: comboPop 0.18s ease-out;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+.combo-count {
+  font-size: 58px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(120deg, #fff, var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgba(255, 213, 74, 0.5));
+}
+
+.combo-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--accent-2);
+  margin-top: -2px;
+}
+
+@keyframes comboPop {
+  0% {
+    transform: scale(1.5);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ---- Combat announcements (KO!, ultimate) ---- */
+.announce {
+  position: absolute;
+  top: 30%;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.announce-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.95;
+  text-align: center;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.7);
+}
+
+.announce-text {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.announce-ko .announce-text {
+  font-size: clamp(56px, 12vw, 128px);
+  animation: koSlam 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.announce-ult .announce-text {
+  font-size: clamp(26px, 5vw, 48px);
+  letter-spacing: 0.14em;
+  animation: ultSweep 0.5s ease-out;
+}
+
+.announce-sub {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+@keyframes koSlam {
+  0% {
+    transform: scale(2.4) rotate(-6deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(0.92) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes ultSweep {
+  0% {
+    transform: translateX(-40px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ---- HUD card portrait ---- */
+.hud-portrait {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  line-height: 1;
+}
+
 .ult-banner {
   position: absolute;
   top: 66px;

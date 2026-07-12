@@ -179,12 +179,16 @@ export function computePose(
 
   const p: Pose = { ...IDLE };
   switch (state) {
-    case 'idle':
-      p.bodyY = Math.sin(time * 2.4) * 0.03;
-      p.armLeft = 0.15 + Math.sin(time * 2.4) * 0.05;
-      p.armRight = -0.15 - Math.sin(time * 2.4) * 0.05;
-      p.headTilt = Math.sin(time * 1.6) * 0.04;
+    case 'idle': {
+      // Gentle breathing with a slow, lifelike weight-shift sway.
+      const b = Math.sin(time * 2.4);
+      p.bodyY = b * 0.035;
+      p.armLeft = 0.16 + b * 0.06;
+      p.armRight = -0.16 - b * 0.06;
+      p.headTilt = Math.sin(time * 1.6) * 0.05;
+      p.bodyTilt = Math.sin(time * 1.2) * 0.03;
       break;
+    }
     case 'walk': {
       const s = Math.sin(time * 9) * 0.7;
       p.armLeft = s;
@@ -196,13 +200,14 @@ export function computePose(
       break;
     }
     case 'run': {
-      const s = Math.sin(time * 15) * 1.15;
+      const s = Math.sin(time * 15) * 1.25;
       p.armLeft = s;
       p.armRight = -s;
       p.legLeft = -s;
       p.legRight = s;
-      p.bodyTilt = 0.32;
-      p.bodyY = Math.abs(Math.sin(time * 15)) * 0.11;
+      p.bodyTilt = 0.36;
+      p.headTilt = 0.08;
+      p.bodyY = Math.abs(Math.sin(time * 15)) * 0.12;
       break;
     }
     case 'jump':
@@ -251,18 +256,20 @@ export function computePose(
       p.bodyY = -0.05;
       break;
     case 'hit':
-      p.bodyTilt = -0.4;
-      p.armLeft = -1 + Math.sin(time * 30) * 0.3;
-      p.armRight = -1 - Math.sin(time * 30) * 0.3;
-      p.headTilt = -0.3;
+      p.bodyTilt = -0.5;
+      p.armLeft = -1.1 + Math.sin(time * 34) * 0.35;
+      p.armRight = -1.1 - Math.sin(time * 34) * 0.35;
+      p.headTilt = -0.36;
+      p.squash = 0.96;
       break;
     case 'knockback':
-      p.bodyRotY = time * 10;
-      p.bodyTilt = -0.6;
-      p.armLeft = -1.6;
-      p.armRight = -1.6;
-      p.legLeft = -0.8;
-      p.legRight = -0.8;
+      // A fast, flailing tumble that sells being launched.
+      p.bodyRotY = time * 13;
+      p.bodyTilt = -0.7;
+      p.armLeft = -1.8 + Math.sin(time * 24) * 0.45;
+      p.armRight = -1.8 - Math.sin(time * 24) * 0.45;
+      p.legLeft = -0.9 + Math.sin(time * 20) * 0.3;
+      p.legRight = -0.6 - Math.sin(time * 20) * 0.3;
       break;
     case 'victory':
       p.armLeft = -2.4;

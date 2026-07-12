@@ -38,7 +38,9 @@ export function integrateMovement(
     const runSpeedBonus = f.config.passive === 'runSpeed' ? 1.12 : 1;
     const sprint = input.sprint ? SPRINT_MULTIPLIER : 1;
     const targetVx = input.moveX * stats.speed * runSpeedBonus * sprint;
-    const accel = f.grounded ? GROUND_ACCEL : AIR_ACCEL;
+    // Air control varies per fighter (acrobats steer hard, heavies drift).
+    const airAccel = AIR_ACCEL * (stats.airControl ?? 1);
+    const accel = f.grounded ? GROUND_ACCEL : airAccel;
 
     if (input.moveX !== 0) {
       f.vel.x = moveToward(f.vel.x, targetVx, accel * dt);
@@ -78,7 +80,8 @@ export function integrateMovement(
 
   // --- Gravity ------------------------------------------------------------
   if (!f.grounded) {
-    f.vel.y -= GRAVITY * debug.gravityScale * dt;
+    // Per-fighter gravity: floaties hang (better air game), heavies fast-fall.
+    f.vel.y -= GRAVITY * (stats.gravityMul ?? 1) * debug.gravityScale * dt;
     if (f.vel.y < -MAX_FALL_SPEED) f.vel.y = -MAX_FALL_SPEED;
   }
 }
@@ -95,7 +98,9 @@ export function integratePosition(
   f.pos.y += f.vel.y * dt;
 
   const wasGrounded = f.grounded;
+  const impactSpeed = -f.vel.y; // downward speed this step (positive while falling)
   f.grounded = false;
+  f.landSpeed = 0;
 
   const feetPrev = prevY - FIGHTER_HALF_HEIGHT;
 
@@ -123,6 +128,7 @@ export function integratePosition(
       f.pos.y = top + FIGHTER_HALF_HEIGHT;
       f.vel.y = 0;
       f.grounded = true;
+      if (!wasGrounded) f.landSpeed = Math.max(0, impactSpeed);
       break;
     }
   }

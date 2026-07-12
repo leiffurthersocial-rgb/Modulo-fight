@@ -12,6 +12,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { debug } from '@/core/debug';
+import { VICTIM_BODY_RADIUS } from '@/core/constants';
 import { effectiveReach } from '@/systems/simulation/FighterRuntime';
 import { attackHitboxActive } from '@/systems/combat/CombatSystem';
 import type { Simulation } from '@/systems/simulation/Simulation';
@@ -50,14 +51,15 @@ export function DebugOverlay({ sim }: { sim: Simulation }) {
         const child = g.children[i] as THREE.Mesh;
         if (f.attack) {
           const reach = effectiveReach(f, f.attack.data);
+          const yc = f.pos.y + f.attack.data.yOffset;
+          const ox = f.pos.x + f.facing * 0.2;
+          const tx = f.pos.x + f.facing * reach;
+          const reff = f.attack.data.radius + VICTIM_BODY_RADIUS;
           child.visible = true;
-          child.position.set(
-            f.pos.x + f.facing * reach,
-            f.pos.y + f.attack.data.yOffset,
-            0.5,
-          );
-          const r = f.attack.data.radius;
-          child.scale.setScalar(r);
+          // Draw the swept capsule as a stretched box from body to reach tip,
+          // thickened by the effective radius (matches CombatSystem).
+          child.position.set((ox + tx) / 2, yc, 0.5);
+          child.scale.set(Math.abs(tx - ox) + reff * 2, reff * 2, reff * 2);
           const mat = child.material as THREE.MeshBasicMaterial;
           mat.color.set(attackHitboxActive(f.attack) ? '#ff2d55' : '#ffd54a');
           i++;
@@ -88,7 +90,7 @@ export function DebugOverlay({ sim }: { sim: Simulation }) {
       <group ref={hitboxGroup}>
         {Array.from({ length: MAX_HITBOXES }).map((_, i) => (
           <mesh key={i} visible={false}>
-            <sphereGeometry args={[1, 12, 12]} />
+            <boxGeometry args={[1, 1, 1]} />
             <meshBasicMaterial color="#ff2d55" wireframe transparent opacity={0.7} />
           </mesh>
         ))}

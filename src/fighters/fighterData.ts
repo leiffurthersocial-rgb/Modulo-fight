@@ -6,6 +6,12 @@
  * trades a strength for a weakness (verified: no Pareto-dominant pair). Robin is
  * the true median, so they neither dominate nor are dominated by anyone.
  *
+ * Beyond raw stats, fighters differ in *mobility feel* via optional
+ * `airControl` and `gravityMul`: acrobats (Till) float and steer hard in the
+ * air, speedsters (Leif) are nimble, and heavies (Leonidas, Tusya) fast-fall
+ * and drift like bricks. This gives each character a distinct aerial identity
+ * that pure numbers can't express.
+ *
  * Adding a new fighter is just appending a config here.
  */
 import type { FighterConfig } from '@/core/types';
@@ -30,6 +36,9 @@ export const FIGHTERS: FighterConfig[] = [
       eyes: '#5b3a1a',
       shirt: '#f5f2e8',
       pants: '#37508f',
+      shoes: '#c8402f',
+      build: 'normal',
+      headband: '#ffd54a',
       accent: '#ffd54a',
     },
     attacks: {
@@ -43,9 +52,10 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       special: makeAttack('special', {
         name: 'Rapid Punches',
-        description: 'A flurry of quick blows — low knockback but racks up damage fast.',
+        description: 'A true flurry of quick blows — each jab racks up damage, low knockback until the last.',
         damage: 2.4,
         active: 0.5,
+        hitInterval: 0.08,
         baseKnockback: 2,
         knockbackScaling: 0.06,
         angle: Math.PI * 0.1,
@@ -70,14 +80,19 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'runSpeed',
     passiveDescription: 'Highest running speed on the roster; closes distance instantly.',
     extraJumps: 1,
-    stats: { speed: 8.0, weight: 0.88, strength: 0.9, jumpHeight: 16.8, knockbackResist: 0 },
+    stats: {
+      speed: 8.0, weight: 0.88, strength: 0.9, jumpHeight: 16.8, knockbackResist: 0,
+      airControl: 1.25,
+    },
     appearance: {
       skin: '#e0a877',
       hair: '#5a3a22',
-      hairStyle: 'medium',
+      hairStyle: 'spiky',
       eyes: '#8a8f96',
       shirt: '#1c1c1f',
       pants: '#3a3d45',
+      shoes: '#38d0ff',
+      build: 'lean',
       accent: '#38d0ff',
     },
     attacks: {
@@ -118,14 +133,16 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'reach',
     passiveDescription: 'All attacks reach noticeably farther than anyone else’s.',
     extraJumps: 1,
-    stats: { speed: 6.1, weight: 0.95, strength: 1.02, jumpHeight: 17.2, knockbackResist: 0.04 },
+    stats: { speed: 6.1, weight: 0.95, strength: 1.0, jumpHeight: 17.2, knockbackResist: 0.04 },
     appearance: {
       skin: '#e6bd97',
       hair: '#4a3320',
-      hairStyle: 'medium',
+      hairStyle: 'long',
       eyes: '#5b3a1a',
       shirt: '#eef2f7',
       pants: '#2f4a35',
+      shoes: '#25352a',
+      build: 'normal',
       accent: '#8affc1',
     },
     attacks: {
@@ -166,7 +183,10 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'knockbackArmor',
     passiveDescription: 'Takes 28% less knockback from every hit — survives to absurd percents.',
     extraJumps: 1,
-    stats: { speed: 5.0, weight: 1.5, strength: 1.15, jumpHeight: 14.0, knockbackResist: 0.3 },
+    stats: {
+      speed: 5.0, weight: 1.5, strength: 1.12, jumpHeight: 14.0, knockbackResist: 0.3,
+      airControl: 0.8, gravityMul: 1.12,
+    },
     appearance: {
       skin: '#d9a273',
       hair: '#4a3320',
@@ -174,6 +194,9 @@ export const FIGHTERS: FighterConfig[] = [
       eyes: '#5b3a1a',
       shirt: '#8a2f2f',
       pants: '#3a2a1e',
+      shoes: '#241812',
+      build: 'heavy',
+      scarf: '#ff7a3c',
       accent: '#ff7a3c',
     },
     attacks: {
@@ -218,7 +241,7 @@ export const FIGHTERS: FighterConfig[] = [
     blurb: 'Durable and patient — punishes whiffs with heavy counter-hits.',
     personality: 'Patient, analytical, punishes mistakes.',
     passive: 'counterForce',
-    passiveDescription: 'Hitting a foe who is mid-attack deals +25% knockback (counter-hit).',
+    passiveDescription: 'Hitting a foe who is mid-attack deals +32% knockback and +20% damage (counter-hit).',
     extraJumps: 1,
     stats: { speed: 5.9, weight: 1.12, strength: 0.92, jumpHeight: 15.8, knockbackResist: 0.2 },
     appearance: {
@@ -228,6 +251,8 @@ export const FIGHTERS: FighterConfig[] = [
       eyes: '#5b3a1a',
       shirt: '#26355c',
       pants: '#1a2236',
+      shoes: '#12161f',
+      build: 'normal',
       accent: '#7c5cff',
       glasses: true,
       goatee: true,
@@ -270,14 +295,20 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'tripleJump',
     passiveDescription: 'Jumps three times before landing — unmatched recovery and air control.',
     extraJumps: 2,
-    stats: { speed: 6.9, weight: 0.82, strength: 0.85, jumpHeight: 18.6, knockbackResist: 0 },
+    stats: {
+      speed: 6.9, weight: 0.82, strength: 0.85, jumpHeight: 18.9, knockbackResist: 0,
+      airControl: 1.4, gravityMul: 0.86,
+    },
     appearance: {
       skin: '#f4d0aa',
       hair: '#efd35f',
-      hairStyle: 'short',
+      hairStyle: 'mohawk',
       eyes: '#3b6ea5',
       shirt: '#2f9a5a',
       pants: '#dfe6ec',
+      shoes: '#6affea',
+      build: 'lean',
+      headband: '#6affea',
       accent: '#6affea',
     },
     attacks: {
@@ -317,14 +348,19 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'precision',
     passiveDescription: 'Heavy and special attacks land with +18% knockback when they connect cleanly.',
     extraJumps: 1,
-    stats: { speed: 6.6, weight: 1.0, strength: 1.12, jumpHeight: 16.9, knockbackResist: 0.06 },
+    stats: {
+      speed: 6.6, weight: 0.98, strength: 1.12, jumpHeight: 16.9, knockbackResist: 0.06,
+      gravityMul: 0.92,
+    },
     appearance: {
       skin: '#ecc199',
       hair: '#6b4a2c',
-      hairStyle: 'medium',
+      hairStyle: 'ponytail',
       eyes: '#5b3a1a',
       shirt: '#1f5e3a',
       pants: '#4a4a2c',
+      shoes: '#2c2c1a',
+      build: 'normal',
       accent: '#b6ff3c',
       glasses: true,
     },
@@ -373,14 +409,20 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'heavyStun',
     passiveDescription: 'Heavy attacks briefly stun on hit, guaranteeing a follow-up.',
     extraJumps: 1,
-    stats: { speed: 5.3, weight: 1.42, strength: 1.25, jumpHeight: 14.6, knockbackResist: 0.14 },
+    stats: {
+      speed: 4.9, weight: 1.4, strength: 1.24, jumpHeight: 14.4, knockbackResist: 0.14,
+      airControl: 0.85, gravityMul: 1.1,
+    },
     appearance: {
       skin: '#6b4a34',
       hair: '#141414',
-      hairStyle: 'short',
+      hairStyle: 'buzz',
       eyes: '#4a2f1a',
       shirt: '#2c2930',
       pants: '#4a2020',
+      shoes: '#1a1012',
+      build: 'heavy',
+      headband: '#ff4d6d',
       accent: '#ff4d6d',
     },
     attacks: {
@@ -397,8 +439,8 @@ export const FIGHTERS: FighterConfig[] = [
         startup: 0.2,
       }),
       special: makeAttack('special', {
-        name: 'Charge Punch',
-        description: 'Winds up a heavy haymaker that blasts foes back.',
+        name: 'Haymaker',
+        description: 'Winds up a colossal haymaker that blasts foes clean across the stage.',
         damage: 14,
         baseKnockback: 10,
         startup: 0.28,

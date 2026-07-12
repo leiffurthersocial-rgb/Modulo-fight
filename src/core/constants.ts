@@ -30,6 +30,13 @@ export const SPRINT_MULTIPLIER = 1.55;
 export const FIGHTER_HALF_WIDTH = 0.45;
 export const FIGHTER_HALF_HEIGHT = 0.9;
 
+/**
+ * Effective body radius used when testing an attack capsule against a victim.
+ * Sits between the body's half-width and half-height so hits that visually
+ * clip any part of the torso register, without being so large that whiffs land.
+ */
+export const VICTIM_BODY_RADIUS = 0.6;
+
 /** Duration of a dodge in seconds and its invulnerability window. */
 export const DODGE_DURATION = 0.36;
 export const DODGE_INVULN = 0.28;
@@ -41,6 +48,24 @@ export const DASH_DURATION = 0.18;
 
 /** Hitstun scaling: seconds of stun per unit of knockback. */
 export const HITSTUN_PER_KNOCKBACK = 0.012;
+
+/**
+ * Hitstop ("impact freeze") — on a confirmed hit the whole simulation pauses
+ * for a few frames, scaled by the hit's power. This is the single biggest
+ * game-feel lever in a fighter: it makes strikes land with weight. Kept short
+ * so fast exchanges never feel sluggish.
+ */
+export const HITSTOP_BASE = 0.025;
+export const HITSTOP_PER_POWER = 0.0022;
+export const HITSTOP_MAX = 0.09;
+export const HITSTOP_KO = 0.13;
+
+/**
+ * Directional Influence — while airborne in hitstun a fighter can nudge their
+ * trajectory slightly by holding a direction, giving skilled players a chance
+ * to survive knockback. Small on purpose so it never trivialises kills.
+ */
+export const DI_STRENGTH = 11;
 
 /** Global knockback tuning — how sharply damage amplifies launch distance. */
 export const KNOCKBACK_DAMAGE_SCALE = 0.9;

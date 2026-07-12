@@ -21,6 +21,7 @@ import { Simulation } from '@/systems/simulation/Simulation';
 import { useDebug } from '@/state/debugStore';
 import { GameScene } from '@/render/GameScene';
 import { HUD } from './HUD';
+import { Announcements } from './Announcements';
 import { PauseMenu } from './PauseMenu';
 import { ControlsLegend } from './Controls';
 import { DebugMenu } from './DebugMenu';
@@ -211,6 +212,7 @@ export function GameScreen() {
       </Canvas>
 
       <HUD />
+      <Announcements key={matchKey} sim={sim} />
       <DebugInfo />
 
       {showControls && !paused && !debugOpen && <ControlsLegend />}

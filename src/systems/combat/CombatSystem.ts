@@ -11,8 +11,9 @@ import {
   COMBO_RESET_TIME,
   HITSTUN_PER_KNOCKBACK,
   KNOCKBACK_DAMAGE_SCALE,
+  VICTIM_BODY_RADIUS,
 } from '@/core/constants';
-import { clamp, dist } from '@/core/math';
+import { clamp, segmentPointDistance } from '@/core/math';
 import { debug } from '@/core/debug';
 import type { EventBus } from '@/systems/simulation/events';
 import {
@@ -30,7 +31,7 @@ export function tryStartAttack(f: FighterRuntime, kind: AttackKind): boolean {
   if (cd > 0) return false;
   if (kind === 'ultimate' && f.ultCharge < 1) return false;
 
-  f.attack = { data, elapsed: 0, hitIds: new Set() };
+  f.attack = { data, elapsed: 0, hitLog: new Map() };
   f.state = kind;
   f.stateTime = 0;
   if (data.cooldown > 0) f.cooldowns[data.name] = data.cooldown;
@@ -94,18 +95,30 @@ export function resolveAttackHits(
   if (!attack || !attackHitboxActive(attack)) return;
 
   const reach = effectiveReach(attacker, attack.data);
-  const hbx = attacker.pos.x + attacker.facing * reach;
-  const hby = attacker.pos.y + attack.data.yOffset;
+  // Swept-capsule hitbox: a segment from just in front of the torso out to the
+  // attack's reach tip, thickened by the move's radius. Testing the whole
+  // segment (not one sampled point) means a move connects along its entire
+  // extent, so attacks that visually clip the opponent reliably register.
+  const yc = attacker.pos.y + attack.data.yOffset;
+  const origin = { x: attacker.pos.x + attacker.facing * 0.2, y: yc };
+  const tip = { x: attacker.pos.x + attacker.facing * reach, y: yc };
 
+  const interval = attack.data.hitInterval;
   for (const victim of others) {
     if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
-    if (attack.hitIds.has(victim.config.id)) continue;
+    // Multi-hit moves re-strike the same target every `hitInterval`; single-hit
+    // moves connect at most once per swing.
+    const last = attack.hitLog.get(victim.config.id);
+    if (last !== undefined) {
+      if (interval === undefined) continue;
+      if (attack.elapsed - last < interval) continue;
+    }
     if (victim.invuln > 0) continue;
 
-    const d = dist({ x: hbx, y: hby }, victim.pos);
-    if (d > attack.data.radius + 0.5) continue;
+    const d = segmentPointDistance(victim.pos, origin, tip);
+    if (d > attack.data.radius + VICTIM_BODY_RADIUS) continue;
 
-    attack.hitIds.add(victim.config.id);
+    attack.hitLog.set(victim.config.id, attack.elapsed);
 
     // Shielding absorbs the hit but drains the shield.
     if (victim.shielding && victim.shield > 0) {
@@ -132,6 +145,10 @@ function applyHit(
   if (attacker.config.passive === 'comboGrowth') {
     damage *= 1 + Math.min(attacker.comboCount, 8) * 0.05;
   }
+  // Erim: counter-hit — striking a foe who is mid-attack rewards patience with
+  // bonus damage (and bonus knockback below).
+  const counterHit = attacker.config.passive === 'counterForce' && !!victim.attack;
+  if (counterHit) damage *= 1.2;
 
   victim.damage = clamp(victim.damage + damage, 0, 999);
   // Lifetime stats for post-match balance data — never reset by respawn.
@@ -147,8 +164,8 @@ function applyHit(
     kb *= 1.18;
   }
   // Erim: counter-hitting a fighter who is mid-attack adds knockback.
-  if (attacker.config.passive === 'counterForce' && victim.attack) {
-    kb *= 1.25;
+  if (counterHit) {
+    kb *= 1.32;
   }
   // Debug: global knockback scaling.
   kb *= debug.knockbackScale;

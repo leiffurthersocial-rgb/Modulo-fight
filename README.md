@@ -9,11 +9,17 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
 
 ## Features
 
-- **8 unique fighters** — each with distinct stats, a passive, a special and an
-  ultimate (Robin, Leif, Jovan, Leonidas, Erim, Till, Lenni, Tusya).
+- **8 unique fighters** — each with distinct stats, a passive, a special, an
+  ultimate, a signature silhouette _and a distinct aerial identity_ (floaty
+  acrobats, nimble speedsters, brick-like heavies) driven by per-fighter air
+  control and gravity (Robin, Leif, Jovan, Leonidas, Erim, Till, Lenni, Tusya).
 - **Percentage-based combat** — no health bars. Damage grows knockback; win by
-  ring-out. Double jumps, air attacks, dashing, dodging, shielding, hitstun and
-  combos.
+  ring-out. Double jumps, air attacks, dashing, dodging, shielding, hitstun,
+  multi-hit flurries and combos.
+- **Punchy game-feel** — swept-capsule hitboxes so attacks connect along their
+  whole arc, impact freeze-frames (hitstop) scaled by power, directional
+  influence to survive knockback, accent-tinted hit sparks, shockwave impact
+  rings, landing dust, motion streaks, shield domes and a live combo counter.
 - **Dynamic arena camera** — Smash-style auto-zoom that always keeps every
   fighter framed, with cinematic smoothing and impact shake.
 - **Human-like AI** — four difficulty tiers (Easy → Insane) that approach,

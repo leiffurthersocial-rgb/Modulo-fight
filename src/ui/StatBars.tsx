@@ -21,6 +21,13 @@ const STAT_DEFS: StatDef[] = [
   { label: 'Weight', color: '#ffb03c', get: (f) => f.stats.weight },
   { label: 'Power', color: '#ff5d73', get: (f) => f.stats.strength },
   { label: 'Jump', color: '#8affc1', get: (f) => f.stats.jumpHeight },
+  {
+    label: 'Air',
+    color: '#6affea',
+    // Air game = manoeuvrability + floatiness + extra jumps, all rolled up.
+    get: (f) =>
+      (f.stats.airControl ?? 1) + (1 - (f.stats.gravityMul ?? 1)) + f.extraJumps * 0.15,
+  },
   { label: 'Defense', color: '#b58cff', get: (f) => f.stats.knockbackResist },
 ];
 

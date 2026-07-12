@@ -26,11 +26,11 @@ export function Lighting({ quality, theme }: { quality: Quality; theme: ArenaThe
 
   return (
     <>
-      <hemisphereLight args={['#eaf3ff', '#5a6a55', 0.75]} />
-      <ambientLight intensity={0.25} />
+      <hemisphereLight args={['#eaf3ff', '#5a6a55', 0.8]} />
+      <ambientLight intensity={0.28} />
       <directionalLight
         position={[10, 18, 10]}
-        intensity={1.9}
+        intensity={2.0}
         color="#fff4dd"
         castShadow={castShadow}
         shadow-mapSize-width={shadowSize || 512}
@@ -42,9 +42,12 @@ export function Lighting({ quality, theme }: { quality: Quality; theme: ArenaThe
         shadow-camera-near={0.5}
         shadow-camera-far={70}
         shadow-bias={-0.0005}
+        shadow-normalBias={0.02}
       />
       {/* Cool rim light from behind for separation. */}
-      <directionalLight position={[-8, 6, -12]} intensity={0.5} color="#9ec6ff" />
+      <directionalLight position={[-8, 6, -12]} intensity={0.6} color="#9ec6ff" />
+      {/* Warm accent fill from the front-low, giving faces a soft key. */}
+      <pointLight position={[0, 3, 12]} intensity={0.35} color="#ffe6c0" distance={40} decay={2} />
     </>
   );
 }

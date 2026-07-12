@@ -9,10 +9,15 @@ import type { ArenaConfig, Difficulty, FighterConfig, GameMode, Vec2 } from '@/c
 import {
   DASH_DURATION,
   DASH_SPEED,
+  DI_STRENGTH,
   DODGE_DURATION,
   DODGE_INVULN,
   DODGE_SPEED,
   FIXED_DT,
+  HITSTOP_BASE,
+  HITSTOP_KO,
+  HITSTOP_MAX,
+  HITSTOP_PER_POWER,
   MAX_STEPS_PER_FRAME,
   RESPAWN_Y,
   SHIELD_DRAIN,
@@ -91,6 +96,9 @@ export class Simulation {
   score = 0;
   wave = 1;
 
+  /** Remaining impact-freeze time; while > 0 the whole match is paused. */
+  hitStop = 0;
+
   private ai = new AIController();
   private accumulator = 0;
   private playerInput: PlayerInputSource;
@@ -120,6 +128,17 @@ export class Simulation {
         ),
       );
     });
+
+    // Impact freeze-frames: heavier hits (and KOs) pause the match briefly so
+    // strikes land with weight. Driven off the same events the renderer uses.
+    this.events.subscribe((e) => {
+      if (e.type === 'hit') {
+        const s = Math.min(HITSTOP_BASE + e.power * HITSTOP_PER_POWER, HITSTOP_MAX);
+        if (s > this.hitStop) this.hitStop = s;
+      } else if (e.type === 'knockout' || e.type === 'ultimate') {
+        if (HITSTOP_KO > this.hitStop) this.hitStop = HITSTOP_KO;
+      }
+    });
   }
 
   pause(): void {
@@ -133,9 +152,17 @@ export class Simulation {
   /** Advance the simulation by real elapsed seconds using fixed steps. */
   advance(realDt: number): void {
     if (this.status !== 'running') return;
+    const scaled = realDt * debug.timeScale;
+    // Impact freeze: consume real time into the hitstop timer and skip stepping
+    // while it lasts. The renderer keeps drawing (particles, shake), so the
+    // frozen instant reads as a punchy "hit pause".
+    if (this.hitStop > 0) {
+      this.hitStop -= scaled;
+      if (this.hitStop > 0) return;
+    }
     // Clamp to avoid huge catch-up after a tab stall; debug time-scale lets us
     // slow-mo or fast-forward the whole match.
-    this.accumulator += Math.min(realDt * debug.timeScale, 0.25);
+    this.accumulator += Math.min(scaled, 0.25);
     let steps = 0;
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
       this.step(FIXED_DT);
@@ -240,10 +267,22 @@ export class Simulation {
       f.shielding = false;
     }
 
+    // --- Directional influence ---------------------------------------------
+    // Airborne hitstun victims may nudge their launch trajectory by holding a
+    // direction — a small window of agency that rewards good survival DI.
+    if (inHitstun && !f.grounded && input.moveX !== 0) {
+      f.vel.x += input.moveX * DI_STRENGTH * dt;
+    }
+
     // --- Movement integration ----------------------------------------------
     const moveInput = this.effectiveMoveInput(f, input);
     integrateMovement(f, moveInput, dt, canAct && f.actionTimer <= 0);
     integratePosition(f, moveInput, this.config.arena, dt);
+
+    // Landing puff — only for meaningful drops, so walking off ledges is quiet.
+    if (f.landSpeed > 7) {
+      this.events.emit({ type: 'land', pos: { x: f.pos.x, y: f.pos.y - 0.85 }, power: f.landSpeed });
+    }
 
     // --- Cosmetic state resolution -----------------------------------------
     this.resolveState(f, input);

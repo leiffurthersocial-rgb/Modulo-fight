@@ -70,6 +70,17 @@ export interface FighterStats {
   jumpHeight: number;
   /** Additional knockback resistance (0–1, subtracted from taken knockback). */
   knockbackResist: number;
+  /**
+   * Air-manoeuvrability multiplier (1 = default). Acrobats and speedsters steer
+   * harder in the air; heavies drift like bricks. Gives each fighter a distinct
+   * aerial feel beyond raw stats.
+   */
+  airControl?: number;
+  /**
+   * Gravity multiplier (1 = default). <1 = floaty (hangs in the air, better air
+   * game, but juggled longer); >1 = heavy fast-faller (grounded, poor recovery).
+   */
+  gravityMul?: number;
 }
 
 /** Frame data + hitbox description for a single attack. */
@@ -102,6 +113,12 @@ export interface AttackData {
   hitstun: number;
   /** Cooldown before the move can be used again (specials/ultimates). */
   cooldown: number;
+  /**
+   * If set, the move is a multi-hit: the same target can be struck again every
+   * `hitInterval` seconds while the hitbox is active (a flurry that racks up
+   * damage). Omit for a normal one-hit-per-swing attack.
+   */
+  hitInterval?: number;
 }
 
 /** Passive ability identifiers — resolved in the combat system. */
@@ -119,11 +136,29 @@ export type PassiveId =
 export interface FighterAppearance {
   skin: string;
   hair: string;
-  hairStyle: 'short' | 'medium' | 'styled' | 'goatee';
+  hairStyle:
+    | 'short'
+    | 'medium'
+    | 'styled'
+    | 'goatee'
+    | 'spiky'
+    | 'long'
+    | 'mohawk'
+    | 'buzz'
+    | 'bald'
+    | 'ponytail';
   eyes: string;
   shirt: string;
   /** Trouser colour (falls back to a neutral dark if omitted). */
   pants?: string;
+  /** Shoe colour (falls back to near-black if omitted). */
+  shoes?: string;
+  /** Body build — scales the silhouette's bulk (defaults to 'normal'). */
+  build?: 'lean' | 'normal' | 'heavy';
+  /** Optional headband colour (worn across the forehead). */
+  headband?: string;
+  /** Optional scarf colour (worn around the neck). */
+  scarf?: string;
   /** Optional accessory flags. */
   glasses?: boolean;
   goatee?: boolean;
