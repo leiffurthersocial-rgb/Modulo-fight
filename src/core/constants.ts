@@ -70,3 +70,9 @@ export const RESPAWN_Y = 8;
 
 /** Seconds of spawn invulnerability after respawning. */
 export const SPAWN_INVULN = 2.2;
+
+/** Survive mode: fixed player lives so scores are comparable. */
+export const SURVIVE_PLAYER_STOCKS = 3;
+
+/** Survive mode: pause between defeating an opponent and the next spawning. */
+export const SURVIVE_WAVE_DELAY = 0.9;

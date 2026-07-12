@@ -5,7 +5,7 @@
  * fixed timestep (accumulator pattern) so behaviour is identical regardless of
  * display frame-rate. React never drives gameplay; it only reads snapshots.
  */
-import type { ArenaConfig, Difficulty, GameMode, Vec2 } from '@/core/types';
+import type { ArenaConfig, Difficulty, FighterConfig, GameMode, Vec2 } from '@/core/types';
 import {
   DASH_DURATION,
   DASH_SPEED,
@@ -19,6 +19,7 @@ import {
   SHIELD_MAX,
   SHIELD_REGEN,
   SPAWN_INVULN,
+  SURVIVE_WAVE_DELAY,
 } from '@/core/constants';
 import { clamp } from '@/core/math';
 import { debug, practice } from '@/core/debug';
@@ -47,6 +48,14 @@ export interface FighterSetup {
   configId: string;
   isPlayer: boolean;
   difficulty: Difficulty;
+  /** Optional per-fighter stock override (defaults to the match's `stocks`). */
+  stocks?: number;
+}
+
+/** Describes the next opponent to spawn in Survive mode. */
+export interface SurviveOpponent {
+  configId: string;
+  difficulty: Difficulty;
 }
 
 export interface MatchConfig {
@@ -55,6 +64,8 @@ export interface MatchConfig {
   fighters: FighterSetup[];
   stocks: number;
   timeLimit: number;
+  /** Survive mode: supplies the opponent for a given wave (1-based). */
+  nextOpponent?: (wave: number, prevId: string | null) => SurviveOpponent;
 }
 
 export type MatchStatus = 'running' | 'paused' | 'finished';
@@ -76,17 +87,25 @@ export class Simulation {
   timeRemaining: number;
   result: MatchResult | null = null;
 
+  /** Survive mode: opponents defeated so far (the score) and current wave. */
+  score = 0;
+  wave = 1;
+
   private ai = new AIController();
   private accumulator = 0;
   private playerInput: PlayerInputSource;
   private eliminationOrder: number[] = [];
   /** Monotonic in-match time, used to script practice-dummy behaviour. */
   private elapsed = 0;
+  private getFighterConfig: (id: string) => FighterConfig;
+  /** Survive mode: countdown between a defeat and the next opponent spawning. */
+  private waveDelay = 0;
 
-  constructor(config: MatchConfig, getFighterConfig: (id: string) => FighterRuntime['config'], playerInput: PlayerInputSource) {
+  constructor(config: MatchConfig, getFighterConfig: (id: string) => FighterConfig, playerInput: PlayerInputSource) {
     this.config = config;
     this.timeRemaining = config.timeLimit;
     this.playerInput = playerInput;
+    this.getFighterConfig = getFighterConfig;
 
     config.fighters.forEach((setup, i) => {
       const spawn = config.arena.spawns[i % config.arena.spawns.length];
@@ -97,7 +116,7 @@ export class Simulation {
           spawn,
           setup.isPlayer,
           setup.difficulty,
-          config.stocks,
+          setup.stocks ?? config.stocks,
         ),
       );
     });
@@ -156,7 +175,13 @@ export class Simulation {
     // 4. Blast zones, stocks and respawns.
     for (const f of this.fighters) this.handleBoundaries(f, dt);
 
-    // 5. Win condition.
+    // 5. Survive mode: spawn the next opponent after the between-wave beat.
+    if (this.config.mode === 'survive' && this.waveDelay > 0) {
+      this.waveDelay -= dt;
+      if (this.waveDelay <= 0) this.spawnNextOpponent();
+    }
+
+    // 6. Win condition.
     this.checkMatchEnd();
   }
 
@@ -307,6 +332,13 @@ export class Simulation {
     if (f.stocks <= 0) {
       f.eliminated = true;
       f.stocks = 0;
+      // Survive mode: defeating the opponent advances a wave rather than ending
+      // the match. The player being eliminated ends the run (handled below).
+      if (this.config.mode === 'survive' && !f.isPlayer) {
+        this.score += 1;
+        this.waveDelay = SURVIVE_WAVE_DELAY;
+        return;
+      }
       if (!this.eliminationOrder.includes(f.index)) this.eliminationOrder.push(f.index);
       return;
     }
@@ -403,9 +435,45 @@ export class Simulation {
     p.state = 'knockback';
   }
 
+  /** Survive mode: instantly clear the current opponent (debug/experiment). */
+  skipWave(): void {
+    if (this.config.mode !== 'survive') return;
+    const opp = this.fighters.find((f) => !f.isPlayer && !f.eliminated);
+    if (!opp) return;
+    opp.eliminated = true;
+    opp.stocks = 0;
+    this.score += 1;
+    this.waveDelay = SURVIVE_WAVE_DELAY;
+  }
+
+  /** Survive mode: replace the defeated opponent with the next, harder one. */
+  private spawnNextOpponent(): void {
+    if (!this.config.nextOpponent) return;
+    this.wave = this.score + 1;
+    const prevId = this.fighters[1]?.config.id ?? null;
+    const next = this.config.nextOpponent(this.wave, prevId);
+    const spawn = this.config.arena.spawns[1 % this.config.arena.spawns.length];
+    this.fighters[1] = createFighterRuntime(
+      this.getFighterConfig(next.configId),
+      1,
+      spawn,
+      false,
+      next.difficulty,
+      1,
+    );
+    // Tell the render layer to swap in the new opponent's model.
+    this.events.emit({ type: 'wave', wave: this.wave, score: this.score });
+  }
+
   private checkMatchEnd(): void {
     // Practice never "ends" — it's a sandbox.
     if (this.config.mode === 'practice') return;
+    // Survive ends only when the player is eliminated.
+    if (this.config.mode === 'survive') {
+      const player = this.fighters.find((x) => x.isPlayer);
+      if (player && player.eliminated) this.finish();
+      return;
+    }
     const alive = this.fighters.filter((f) => !f.eliminated);
     if (alive.length <= 1 && this.fighters.length > 1) {
       this.finish();

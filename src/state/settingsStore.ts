@@ -59,6 +59,8 @@ interface SettingsState {
   batterySaver: boolean;
   /** Auto-pause the match when the browser tab loses focus. */
   autoPauseOnBlur: boolean;
+  /** Show an impact "X" marker on every hit. */
+  hitMarkers: boolean;
   /** Player's custom key overrides. */
   keyOverrides: KeyOverrides;
 
@@ -72,9 +74,27 @@ interface SettingsState {
   setShowControls: (s: boolean) => void;
   setBatterySaver: (s: boolean) => void;
   setAutoPauseOnBlur: (s: boolean) => void;
+  setHitMarkers: (s: boolean) => void;
   setKeyOverride: (action: Action, code: string) => void;
   resetKeyOverrides: () => void;
+  /** Restore every setting (audio, graphics, controls, …) to its default. */
+  resetAll: () => void;
 }
+
+const SETTINGS_DEFAULTS = {
+  masterVolume: 0.8,
+  musicVolume: 0.5,
+  sfxVolume: 0.9,
+  muted: false,
+  quality: 'high' as Quality,
+  showFps: false,
+  cameraShake: true,
+  showControls: true,
+  batterySaver: false,
+  autoPauseOnBlur: true,
+  hitMarkers: true,
+  keyOverrides: {} as KeyOverrides,
+};
 
 const STORAGE_KEY = 'modulo-fight-settings';
 
@@ -102,6 +122,7 @@ function persist(state: SettingsState): void {
         showControls: state.showControls,
         batterySaver: state.batterySaver,
         autoPauseOnBlur: state.autoPauseOnBlur,
+        hitMarkers: state.hitMarkers,
         keyOverrides: state.keyOverrides,
       }),
     );
@@ -133,6 +154,7 @@ export const useSettings = create<SettingsState>((set, get) => {
     showControls: saved.showControls ?? true,
     batterySaver: saved.batterySaver ?? false,
     autoPauseOnBlur: saved.autoPauseOnBlur ?? true,
+    hitMarkers: saved.hitMarkers ?? true,
     keyOverrides: saved.keyOverrides ?? {},
 
     setMasterVolume: (v) => {
@@ -179,12 +201,25 @@ export const useSettings = create<SettingsState>((set, get) => {
       set({ autoPauseOnBlur: s });
       commit();
     },
+    setHitMarkers: (s) => {
+      set({ hitMarkers: s });
+      commit();
+    },
     setKeyOverride: (action, code) => {
       set({ keyOverrides: { ...get().keyOverrides, [action]: code } });
       commit();
     },
     resetKeyOverrides: () => {
       set({ keyOverrides: {} });
+      commit();
+    },
+    resetAll: () => {
+      set({ ...SETTINGS_DEFAULTS });
+      audioManager.masterVolume = SETTINGS_DEFAULTS.masterVolume;
+      audioManager.musicVolume = SETTINGS_DEFAULTS.musicVolume;
+      audioManager.sfxVolume = SETTINGS_DEFAULTS.sfxVolume;
+      audioManager.muted = SETTINGS_DEFAULTS.muted;
+      audioManager.applyVolumes();
       commit();
     },
   };

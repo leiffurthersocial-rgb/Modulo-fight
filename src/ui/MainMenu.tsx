@@ -3,23 +3,24 @@
  */
 import { useGame } from '@/state/gameStore';
 import { useDebug } from '@/state/debugStore';
+import { useRecords } from '@/state/recordsStore';
 import { audioManager } from '@/systems/audio/AudioManager';
 import { useTripleTap } from './useTripleTap';
 
 export function MainMenu() {
   const goto = useGame((s) => s.goto);
   const setMode = useGame((s) => s.setMode);
+  const bestScore = useRecords((s) => s.bestScore);
   const unlockDebug = useDebug((s) => s.unlock);
   const onLogoTap = useTripleTap(() => {
     audioManager.play('confirm');
     unlockDebug();
   });
 
-  const start = (mode: 'play' | 'practice'): void => {
+  const start = (mode: 'play' | 'practice' | 'survive'): void => {
     audioManager.play('confirm');
-    if (mode === 'practice') {
-      setMode('practice');
-    }
+    if (mode === 'practice') setMode('practice');
+    if (mode === 'survive') setMode('survive');
     goto('characterSelect');
   };
 
@@ -40,6 +41,9 @@ export function MainMenu() {
           }}
         >
           Play
+        </button>
+        <button className="btn" onClick={() => start('survive')}>
+          Survive{bestScore > 0 ? ` · Best ${bestScore}` : ''}
         </button>
         <button className="btn" onClick={() => start('practice')}>
           Practice

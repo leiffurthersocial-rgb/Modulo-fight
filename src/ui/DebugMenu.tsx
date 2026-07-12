@@ -9,9 +9,9 @@
  */
 import type { TrainingBehavior } from '@/core/debug';
 import type { Difficulty } from '@/core/types';
-import { FIGHTERS } from '@/fighters/fighterData';
 import { useDebug } from '@/state/debugStore';
 import { useGame } from '@/state/gameStore';
+import { useRecords } from '@/state/recordsStore';
 import type { Simulation } from '@/systems/simulation/Simulation';
 
 interface Props {
@@ -96,7 +96,10 @@ export function DebugMenu({ sim, onClose }: Props) {
             Close
           </button>
         </div>
-        <div className="hint">Live tuning and cheats. Changes apply instantly to the running match.</div>
+        <div className="hint">
+          Live tuning and cheats. Changes apply instantly. While the debug menu is unlocked,
+          Survive runs won't count toward records.
+        </div>
 
         {/* Simulation tuning */}
         <div className="debug-section">
@@ -205,6 +208,11 @@ export function DebugMenu({ sim, onClose }: Props) {
               <button className="btn small" onClick={() => sim.chargeUlt()}>
                 Charge Ultimate
               </button>
+              {sim.config.mode === 'survive' && (
+                <button className="btn small" onClick={() => sim.skipWave()}>
+                  Skip Wave →
+                </button>
+              )}
               <button className="btn small" onClick={() => sim.launchPlayer(-1)}>
                 Launch ←
               </button>
@@ -225,13 +233,35 @@ export function DebugMenu({ sim, onClose }: Props) {
           </div>
         )}
 
-        <div className="row" style={{ justifyContent: 'space-between', marginTop: 18 }}>
-          <span className="hint" style={{ margin: 0 }}>
-            Roster: {FIGHTERS.length} fighters loaded
-          </span>
-          <button className="btn ghost small" onClick={() => d.resetFlags()}>
-            Reset All Flags
-          </button>
+        <div className="debug-section">
+          <div className="debug-title">Manage</div>
+          <div className="chips">
+            <button className="btn small" onClick={() => d.resetFlags()}>
+              Reset Debug Flags
+            </button>
+            <button
+              className="btn small"
+              onClick={() => {
+                if (confirm('Reset all Survive high scores?')) useRecords.getState().reset();
+              }}
+            >
+              Reset Records
+            </button>
+            <button
+              className="btn ghost small"
+              onClick={() => {
+                if (
+                  confirm(
+                    'Disable the debug menu? It will re-lock (tap the logo 3× to re-open) and all cheats reset. Survive runs count toward records again.',
+                  )
+                ) {
+                  d.disable();
+                }
+              }}
+            >
+              Disable Debug Menu
+            </button>
+          </div>
         </div>
       </div>
     </div>

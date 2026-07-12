@@ -24,6 +24,8 @@ interface DebugStore extends DebugFlags, PracticeConfig {
 
   unlock: () => void;
   setOpen: (open: boolean) => void;
+  /** Re-lock the debug menu and clear all flags (records count again after). */
+  disable: () => void;
 
   setFlag: <K extends keyof DebugFlags>(key: K, value: DebugFlags[K]) => void;
   setBehavior: (b: TrainingBehavior) => void;
@@ -40,6 +42,10 @@ export const useDebug = create<DebugStore>((set) => ({
 
   unlock: () => set({ unlocked: true, open: true }),
   setOpen: (open) => set({ open }),
+  disable: () => {
+    resetDebug();
+    set({ ...debug, unlocked: false, open: false });
+  },
 
   setFlag: (key, value) => {
     (debug[key] as DebugFlags[typeof key]) = value;

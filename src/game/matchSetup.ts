@@ -8,9 +8,13 @@
  */
 import type { Difficulty, GameMode } from '@/core/types';
 import { getArena } from '@/arenas/arenaData';
+import { SURVIVE_PLAYER_STOCKS } from '@/core/constants';
 import { FIGHTERS } from '@/fighters/fighterData';
 import { MODE_FIGHTER_COUNT } from '@/state/gameStore';
-import type { FighterSetup, MatchConfig } from '@/systems/simulation/Simulation';
+import type { FighterSetup, MatchConfig, SurviveOpponent } from '@/systems/simulation/Simulation';
+
+/** The fixed, balanced stage Survive is always played on, so scores compare. */
+export const SURVIVE_ARENA_ID = 'skyTemple';
 
 export interface MatchSelections {
   mode: GameMode;
@@ -23,6 +27,14 @@ export interface MatchSelections {
   duelOpponentId: string;
   practiceOpponentId: string;
   practiceStocks: number;
+}
+
+/** Survive difficulty ramp — opponents get sharper the deeper you go. */
+export function surviveDifficulty(wave: number): Difficulty {
+  if (wave <= 2) return 'easy';
+  if (wave <= 5) return 'normal';
+  if (wave <= 9) return 'hard';
+  return 'insane';
 }
 
 /** Fisher–Yates shuffle (returns a new array). */
@@ -47,6 +59,28 @@ export function buildMatchConfig(sel: MatchSelections): MatchConfig {
     isPlayer: true,
     difficulty: 'human',
   };
+
+  // --- Survive: standardized endless 1v1 gauntlet ------------------------
+  if (sel.mode === 'survive') {
+    const roster = FIGHTERS.map((f) => f.id).filter((id) => id !== sel.playerFighterId);
+    const nextOpponent = (wave: number, prevId: string | null): SurviveOpponent => {
+      const pool = roster.filter((id) => id !== prevId);
+      const configId = pool[Math.floor(Math.random() * pool.length)];
+      return { configId, difficulty: surviveDifficulty(wave) };
+    };
+    const first = nextOpponent(1, null);
+    return {
+      mode: 'survive',
+      arena: getArena(SURVIVE_ARENA_ID),
+      fighters: [
+        { ...player, stocks: SURVIVE_PLAYER_STOCKS },
+        { configId: first.configId, isPlayer: false, difficulty: first.difficulty, stocks: 1 },
+      ],
+      stocks: SURVIVE_PLAYER_STOCKS,
+      timeLimit: 0,
+      nextOpponent,
+    };
+  }
 
   // --- Practice: two-fighter sandbox -------------------------------------
   if (sel.mode === 'practice') {

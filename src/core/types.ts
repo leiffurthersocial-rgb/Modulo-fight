@@ -44,7 +44,7 @@ export type AttackKind = 'light' | 'heavy' | 'special' | 'ultimate';
 export type Difficulty = 'human' | 'easy' | 'normal' | 'hard' | 'insane';
 
 /** Supported game modes. */
-export type GameMode = 'practice' | '1v1' | 'ffa4' | 'ffa8';
+export type GameMode = 'practice' | '1v1' | 'ffa4' | 'ffa8' | 'survive';
 
 /** Top-level app screens. */
 export type Screen =

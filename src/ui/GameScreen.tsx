@@ -12,6 +12,7 @@ import { Canvas } from '@react-three/fiber';
 import { getFighter } from '@/fighters/fighterData';
 import { buildMatchConfig } from '@/game/matchSetup';
 import { useGame } from '@/state/gameStore';
+import { useRecords } from '@/state/recordsStore';
 import { resolveBindings, useSettings } from '@/state/settingsStore';
 import { audioManager } from '@/systems/audio/AudioManager';
 import { KeyboardController } from '@/systems/input/KeyboardController';
@@ -44,6 +45,7 @@ export function GameScreen() {
   const showControls = useSettings((s) => s.showControls);
   const batterySaver = useSettings((s) => s.batterySaver);
   const autoPauseOnBlur = useSettings((s) => s.autoPauseOnBlur);
+  const hitMarkers = useSettings((s) => s.hitMarkers);
   const keyOverrides = useSettings((s) => s.keyOverrides);
   const debugOpen = useDebug((s) => s.open);
   const setDebugOpen = useDebug((s) => s.setOpen);
@@ -154,15 +156,38 @@ export function GameScreen() {
     };
   }, [autoPauseOnBlur, sim]);
 
+  // Survive integrity: a run is "tainted" (no record) if the debug menu was
+  // unlocked at any point during it. Reset per match, latched on unlock.
+  const runTainted = useRef(false);
+  useEffect(() => {
+    runTainted.current = useDebug.getState().unlocked;
+    const unsub = useDebug.subscribe((state) => {
+      if (state.unlocked) runTainted.current = true;
+    });
+    return unsub;
+  }, [sim]);
+
   const restart = useCallback(() => {
     setPaused(false);
     setMatchKey((k) => k + 1);
   }, []);
 
   const onFinished = useCallback(() => {
+    if (sim.config.mode === 'survive') {
+      const tainted = runTainted.current;
+      const fighterId = selections.playerFighterId;
+      const isRecord = tainted ? false : useRecords.getState().submit(fighterId, sim.score);
+      useGame.getState().setSurviveResult({
+        score: sim.score,
+        wave: sim.wave,
+        fighterId,
+        tainted,
+        isRecord,
+      });
+    }
     // Give the final KO a beat to land before showing results.
     window.setTimeout(() => goto('results'), 1100);
-  }, [goto]);
+  }, [goto, sim, selections.playerFighterId]);
 
   return (
     <div className="app">
@@ -177,6 +202,7 @@ export function GameScreen() {
           sim={sim}
           quality={effectiveQuality}
           cameraShake={effectiveCameraShake}
+          hitMarkers={hitMarkers}
           effectsScale={effectsScale}
           beginFrame={beginFrame}
           endFrame={endFrame}

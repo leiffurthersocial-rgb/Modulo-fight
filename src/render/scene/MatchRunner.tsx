@@ -78,6 +78,8 @@ export function MatchRunner({ sim, beginFrame, endFrame, cameraShake, onFinished
       hudTimer.current = 0;
       setHudSnapshot({
         timeRemaining: sim.timeRemaining,
+        score: sim.score,
+        wave: sim.wave,
         fighters: sim.fighters.map((f) => ({
           index: f.index,
           configId: f.config.id,
@@ -109,22 +111,24 @@ export function MatchRunner({ sim, beginFrame, endFrame, cameraShake, onFinished
       fps.frames = 0;
     }
 
-    // 6. End-of-match handoff.
+    // 6. End-of-match handoff. Survive builds its own summary in GameScreen.
     if (sim.status === 'finished' && !finished.current) {
       finished.current = true;
-      const placements = (sim.result?.placements ?? []).map((idx) => {
-        const f = sim.fighters[idx];
-        const cfg = getFighter(f.config.id);
-        return {
-          index: idx,
-          configId: cfg.id,
-          name: cfg.name,
-          damageDealt: Math.round(f.totalDamageDealt),
-          damageTaken: Math.round(f.totalDamageTaken),
-          kos: f.koCount,
-        };
-      });
-      useGame.getState().setResults(placements);
+      if (sim.config.mode !== 'survive') {
+        const placements = (sim.result?.placements ?? []).map((idx) => {
+          const f = sim.fighters[idx];
+          const cfg = getFighter(f.config.id);
+          return {
+            index: idx,
+            configId: cfg.id,
+            name: cfg.name,
+            damageDealt: Math.round(f.totalDamageDealt),
+            damageTaken: Math.round(f.totalDamageTaken),
+            kos: f.koCount,
+          };
+        });
+        useGame.getState().setResults(placements);
+      }
       onFinished();
     }
   });
