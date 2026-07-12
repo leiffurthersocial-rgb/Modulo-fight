@@ -5,12 +5,13 @@
  * and the MatchRunner that drives the simulation. Kept separate from the React
  * DOM overlay (HUD / menus) so the two layers stay cleanly decoupled.
  */
-import { Suspense } from 'react';
+import { Suspense, useEffect, useReducer } from 'react';
 import type { Quality } from '@/state/settingsStore';
 import type { Simulation } from '@/systems/simulation/Simulation';
 import { ArenaView } from './arena/ArenaView';
 import { FighterView } from './fighter/FighterView';
 import { Particles } from './effects/Particles';
+import { HitMarkers } from './effects/HitMarkers';
 import { DebugOverlay } from './effects/DebugOverlay';
 import { Lighting } from './scene/Lighting';
 import { PostEffects } from './scene/PostEffects';
@@ -20,6 +21,7 @@ interface Props {
   sim: Simulation;
   quality: Quality;
   cameraShake: boolean;
+  hitMarkers: boolean;
   /** Scales ambient/decorative particle counts (1 = full, <1 = battery saver). */
   effectsScale?: number;
   beginFrame: () => void;
@@ -27,10 +29,31 @@ interface Props {
   onFinished: () => void;
 }
 
+/**
+ * Fighter views. In Survive the opponent slot is swapped in-place each wave, so
+ * we re-render on the `wave` event and key the opponent by wave to remount its
+ * voxel model with the new appearance (the player keeps a stable key).
+ */
+function Fighters({ sim }: { sim: Simulation }) {
+  const [, force] = useReducer((x: number) => x + 1, 0);
+  useEffect(() => sim.events.subscribe((e) => e.type === 'wave' && force()), [sim]);
+  return (
+    <>
+      {sim.fighters.map((f) => (
+        <FighterView
+          key={f.isPlayer ? 'player' : `opp-${sim.wave}-${f.index}`}
+          runtime={f}
+        />
+      ))}
+    </>
+  );
+}
+
 export function GameScene({
   sim,
   quality,
   cameraShake,
+  hitMarkers,
   effectsScale = 1,
   beginFrame,
   endFrame,
@@ -44,11 +67,10 @@ export function GameScene({
       <Lighting quality={quality} theme={sim.config.arena.theme} />
       <ArenaView arena={sim.config.arena} effectsScale={effectsScale} />
 
-      {sim.fighters.map((f) => (
-        <FighterView key={f.config.id + f.index} runtime={f} />
-      ))}
+      <Fighters sim={sim} />
 
       <Particles events={sim.events} maxParticles={Math.round(260 * effectsScale)} />
+      {hitMarkers && <HitMarkers events={sim.events} />}
       <DebugOverlay sim={sim} />
 
       <MatchRunner

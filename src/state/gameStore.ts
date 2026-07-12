@@ -35,6 +35,20 @@ export interface HudFighter {
 export interface HudSnapshot {
   fighters: HudFighter[];
   timeRemaining: number;
+  /** Survive mode: opponents defeated so far and the current wave. */
+  score?: number;
+  wave?: number;
+}
+
+/** Survive mode end-of-run summary shown on the results screen. */
+export interface SurviveResult {
+  score: number;
+  wave: number;
+  fighterId: string;
+  /** True if the debug menu was unlocked during the run (record not counted). */
+  tainted: boolean;
+  /** True if this run set a new overall record. */
+  isRecord: boolean;
 }
 
 /** The subset of state that persists across sessions. */
@@ -67,6 +81,9 @@ interface GameState extends PersistedSelections {
     kos: number;
   }[];
 
+  // Survive mode end-of-run summary (null for other modes).
+  surviveResult: SurviveResult | null;
+
   // FPS readout for debug HUD.
   fps: number;
 
@@ -84,6 +101,7 @@ interface GameState extends PersistedSelections {
   setPracticeStocks: (n: number) => void;
   setHudSnapshot: (snap: HudSnapshot) => void;
   setResults: (placements: GameState['resultPlacements']) => void;
+  setSurviveResult: (r: SurviveResult | null) => void;
   setFps: (fps: number) => void;
 }
 
@@ -93,6 +111,7 @@ export const MODE_FIGHTER_COUNT: Record<GameMode, number> = {
   '1v1': 2,
   ffa4: 4,
   ffa8: 8,
+  survive: 2,
 };
 
 const STORAGE_KEY = 'modulo-fight-selections';
@@ -162,6 +181,7 @@ export const useGame = create<GameState>((set, get) => {
 
     hud: { fighters: [], timeRemaining: DEFAULT_TIME_LIMIT },
     resultPlacements: [],
+    surviveResult: null,
     fps: 60,
 
     goto: (screen) => set({ screen }),
@@ -207,6 +227,7 @@ export const useGame = create<GameState>((set, get) => {
     },
     setHudSnapshot: (hud) => set({ hud }),
     setResults: (resultPlacements) => set({ resultPlacements }),
+    setSurviveResult: (surviveResult) => set({ surviveResult }),
     setFps: (fps) => set({ fps }),
   };
 });

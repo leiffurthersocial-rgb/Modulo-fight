@@ -12,6 +12,7 @@ import { FIGHTERS, getFighter } from '@/fighters/fighterData';
 import type { TrainingBehavior } from '@/core/debug';
 import { useGame } from '@/state/gameStore';
 import { useDebug } from '@/state/debugStore';
+import { useRecords } from '@/state/recordsStore';
 import { audioManager } from '@/systems/audio/AudioManager';
 import { StatBars } from './StatBars';
 import { ControlsCard } from './Controls';
@@ -57,8 +58,12 @@ export function CharacterSelect() {
   const immovable = useDebug((s) => s.immovable);
   const setBehavior = useDebug((s) => s.setBehavior);
   const setImmovable = useDebug((s) => s.setImmovable);
+  const bestScore = useRecords((s) => s.bestScore);
+  const bestFighterId = useRecords((s) => s.bestFighterId);
+  const fighterBest = useRecords((s) => s.perFighter[playerFighterId] ?? 0);
 
   const isPractice = mode === 'practice';
+  const isSurvive = mode === 'survive';
   const selected = useMemo(() => getFighter(playerFighterId), [playerFighterId]);
 
   const start = (): void => {
@@ -73,7 +78,11 @@ export function CharacterSelect() {
           <div>
             <h2>Choose Your Fighter</h2>
             <div className="hint">
-              {isPractice ? 'Practice against a training dummy.' : 'Select your fighter and the rules of battle.'}
+              {isPractice
+                ? 'Practice against a training dummy.'
+                : isSurvive
+                  ? 'Survive as long as you can against endless opponents.'
+                  : 'Select your fighter and the rules of battle.'}
             </div>
           </div>
           <button className="btn ghost small" onClick={() => goto('mainMenu')}>
@@ -83,7 +92,7 @@ export function CharacterSelect() {
 
         {/* Options */}
         <div className="stack">
-          {!isPractice && (
+          {!isPractice && !isSurvive && (
             <div className="field">
               <span className="field-label">Mode</span>
               <div className="chips">
@@ -103,27 +112,49 @@ export function CharacterSelect() {
             </div>
           )}
 
-          <div className="field">
-            <span className="field-label">Arena</span>
-            <div className="chips">
-              {ARENAS.map((a) => (
-                <button
-                  key={a.id}
-                  className={`chip ${arenaId === a.id ? 'active' : ''} ${a.implemented ? '' : 'disabled'}`}
-                  disabled={!a.implemented}
-                  onClick={() => {
-                    if (!a.implemented) return;
-                    audioManager.play('select');
-                    setArena(a.id);
-                  }}
-                  title={a.implemented ? a.description : 'Coming soon'}
-                >
-                  {a.name}
-                  {!a.implemented && ' 🔒'}
-                </button>
-              ))}
+          {isSurvive && (
+            <div className="survive-info">
+              <div className="survive-info-title">🏆 Survive Mode</div>
+              <p className="move-desc" style={{ marginTop: 0 }}>
+                Standardized so scores compare fairly: <b>Sky Temple</b>, <b>3 lives</b>, and a
+                fresh 1-on-1 opponent every time you win. Opponents get tougher the deeper you go.
+                Your score is the number of opponents you defeat.
+              </p>
+              <div className="row" style={{ gap: 18, marginTop: 4 }}>
+                <span className="survive-stat">
+                  Best <b>{bestScore}</b>
+                  {bestFighterId ? ` · ${getFighter(bestFighterId).name}` : ''}
+                </span>
+                <span className="survive-stat">
+                  This fighter <b>{fighterBest}</b>
+                </span>
+              </div>
             </div>
-          </div>
+          )}
+
+          {!isSurvive && (
+            <div className="field">
+              <span className="field-label">Arena</span>
+              <div className="chips">
+                {ARENAS.map((a) => (
+                  <button
+                    key={a.id}
+                    className={`chip ${arenaId === a.id ? 'active' : ''} ${a.implemented ? '' : 'disabled'}`}
+                    disabled={!a.implemented}
+                    onClick={() => {
+                      if (!a.implemented) return;
+                      audioManager.play('select');
+                      setArena(a.id);
+                    }}
+                    title={a.implemented ? a.description : 'Coming soon'}
+                  >
+                    {a.name}
+                    {!a.implemented && ' 🔒'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {mode === '1v1' && (
             <div className="field">
@@ -154,7 +185,7 @@ export function CharacterSelect() {
             </div>
           )}
 
-          {!isPractice && (
+          {!isPractice && !isSurvive && (
             <div className="row" style={{ gap: 32 }}>
               <div className="field">
                 <span className="field-label">Bot Difficulty</span>
@@ -342,7 +373,7 @@ export function CharacterSelect() {
 
         <div className="row" style={{ marginTop: 22, justifyContent: 'flex-end' }}>
           <button className="btn primary" style={{ minWidth: 200 }} onClick={start}>
-            Start Match
+            {isSurvive ? 'Start Survive' : 'Start Match'}
           </button>
         </div>
       </div>

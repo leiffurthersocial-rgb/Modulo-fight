@@ -18,18 +18,30 @@ function formatTime(seconds: number): string {
 export function HUD() {
   const hud = useGame((s) => s.hud);
   const fps = useGame((s) => s.fps);
+  const mode = useGame((s) => s.mode);
   const showFps = useSettings((s) => s.showFps);
   const timeLimit = useGame((s) => s.timeLimit);
 
   const player = hud.fighters.find((f) => f.isPlayer);
   const ultReady = !!player && !player.eliminated && player.ultCharge >= 1;
+  const isSurvive = mode === 'survive';
 
   return (
     <div className="hud">
-      {timeLimit > 0 && (
+      {isSurvive ? (
         <div className="hud-top">
-          <div className="hud-timer">{formatTime(hud.timeRemaining)}</div>
+          <div className="hud-survive">
+            <span className="hud-survive-label">SCORE</span>
+            <span className="hud-survive-score">{hud.score ?? 0}</span>
+            <span className="hud-survive-wave">Wave {hud.wave ?? 1}</span>
+          </div>
         </div>
+      ) : (
+        timeLimit > 0 && (
+          <div className="hud-top">
+            <div className="hud-timer">{formatTime(hud.timeRemaining)}</div>
+          </div>
+        )
       )}
 
       {/* Prominent notice when the player's ultimate is charged. */}

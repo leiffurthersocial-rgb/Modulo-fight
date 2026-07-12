@@ -14,6 +14,10 @@ export function codeLabel(code: string): string {
   if (code.startsWith('Key')) return code.slice(3);
   if (code.startsWith('Digit')) return code.slice(5);
   if (code.startsWith('Arrow')) return code.slice(5);
+  // Strip Left/Right on modifier keys and shorten Control → Ctrl.
+  const modifier = code.replace(/(Left|Right)$/, '');
+  if (modifier === 'Shift' || modifier === 'Alt' || modifier === 'Meta') return modifier;
+  if (modifier === 'Control') return 'Ctrl';
   return code;
 }
 

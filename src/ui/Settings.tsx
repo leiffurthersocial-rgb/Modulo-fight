@@ -174,6 +174,13 @@ export function Settings() {
             >
               Auto-Pause on Tab Switch {s.autoPauseOnBlur ? 'On' : 'Off'}
             </button>
+            <button
+              className={`chip ${s.hitMarkers ? 'active' : ''}`}
+              onClick={() => s.setHitMarkers(!s.hitMarkers)}
+              title="Shows an impact marker on every hit that connects"
+            >
+              Hit Markers {s.hitMarkers ? 'On' : 'Off'}
+            </button>
           </div>
 
           <div className="row spread" style={{ marginTop: 8 }}>
@@ -195,6 +202,19 @@ export function Settings() {
                 />
               ))}
             </div>
+          </div>
+
+          <div className="row" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
+            <button
+              className="btn ghost small"
+              onClick={() => {
+                if (confirm('Reset all settings (audio, graphics, controls) to defaults?')) {
+                  s.resetAll();
+                }
+              }}
+            >
+              Reset All Settings
+            </button>
           </div>
         </div>
       </div>
