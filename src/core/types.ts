@@ -177,6 +177,8 @@ export interface FighterAppearance {
   kneePads?: string;
   /** Optional glowing chest pendant (accent-coloured, emissive). */
   pendant?: boolean;
+  /** Optional royal crown worn on the head (gold band, prongs and a jewel). */
+  crown?: boolean;
   /** Optional accessory flags. */
   glasses?: boolean;
   goatee?: boolean;

@@ -146,6 +146,7 @@ export const FIGHTERS: FighterConfig[] = [
       shoes: '#25352a',
       build: 'normal',
       cape: '#24382b',
+      crown: true,
       accent: '#8affc1',
     },
     attacks: {

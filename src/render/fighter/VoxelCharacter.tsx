@@ -238,6 +238,22 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
           {appearance.headband && (
             <Box args={[0.6, 0.1, 0.56]} position={[0, 0.18, 0.01]} color={appearance.headband} matRef={collect} />
           )}
+          {/* Optional royal crown: a gold band, four prongs and a gemstone.
+              Sits just above the hair silhouette (hair caps top out at 0.42
+              in head-local space) so it reads clearly instead of clipping
+              into the hairline. */}
+          {appearance.crown && (
+            <group position={[0, 0.47, 0]}>
+              <Box args={[0.62, 0.14, 0.58]} position={[0, 0, 0]} color="#ffd54a" matRef={collect} roughness={0.3} metalness={0.7} />
+              {[-0.22, -0.07, 0.08, 0.23].map((x, i) => (
+                <Box key={i} args={[0.09, 0.16, 0.09]} position={[x, 0.14, 0]} color="#ffd54a" matRef={collect} roughness={0.3} metalness={0.7} />
+              ))}
+              <mesh position={[0, 0.09, 0.3]}>
+                <boxGeometry args={[0.09, 0.09, 0.05]} />
+                <meshStandardMaterial color="#ff3d5c" emissive="#ff3d5c" emissiveIntensity={0.6} roughness={0.2} metalness={0.4} />
+              </mesh>
+            </group>
+          )}
           {/* Eyes (white sclera + coloured pupil). */}
           <Box args={[0.11, 0.13, 0.05]} position={[-0.13, 0.02, 0.27]} color={'#ffffff'} matRef={collect} />
           <Box args={[0.11, 0.13, 0.05]} position={[0.13, 0.02, 0.27]} color={'#ffffff'} matRef={collect} />
