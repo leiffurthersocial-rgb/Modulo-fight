@@ -16,6 +16,8 @@ export interface Pose {
   bodyY: number;
   bodyTilt: number;
   bodyRotY: number;
+  /** Forward/backward pitch (X axis) — used for rolls, dives and tumbles. */
+  bodyRotX: number;
   armLeft: number;
   armRight: number;
   legLeft: number;
@@ -40,6 +42,7 @@ const IDLE: Pose = {
   bodyY: 0,
   bodyTilt: 0,
   bodyRotY: 0,
+  bodyRotX: 0,
   armLeft: 0.1,
   armRight: -0.1,
   legLeft: 0,
@@ -116,12 +119,13 @@ function attackPose(style: AttackStyle, p: number, time: number, facing: number)
       o.squash = 1 + 0.12 * wind - 0.22 * strike;
       break;
     case 'dive':
-      // Coil up, then extend into a committed diving kick.
+      // Coil up, then pitch head-first into a committed diving kick.
       o.legRight = -1.4 * wind + 2.0 * strike;
       o.legLeft = -1.4 * wind + 0.5 * strike;
       o.armLeft = -2.0 + 1.2 * strike;
       o.armRight = -2.0 + 1.2 * strike;
       o.bodyTilt = 0.25 + 0.6 * strike;
+      o.bodyRotX = 0.85 * strike;
       o.bodyRotY = facing * strike * Math.PI * 0.45;
       break;
     case 'barrage': {
@@ -245,15 +249,24 @@ export function computePose(
       p.legRight = 0.6;
       break;
     case 'dodge':
-      p.squash = 0.9;
-      p.bodyRotY = time * 20;
-      p.armLeft = 1;
-      p.armRight = 1;
+      // A committed forward roll: tuck tight and somersault once.
+      p.squash = 0.72;
+      p.bodyY = -0.18;
+      p.bodyRotX = Math.min(time * 17.5, Math.PI * 2);
+      p.armLeft = -1.2;
+      p.armRight = -1.2;
+      p.legLeft = 1.1;
+      p.legRight = 1.1;
+      p.headTilt = 0.3;
       break;
     case 'shield':
-      p.armLeft = -0.9;
-      p.armRight = -0.9;
-      p.bodyY = -0.05;
+      // Guarded cower: arms crossed high, crouched and braced.
+      p.armLeft = -1.1;
+      p.armRight = -1.1;
+      p.bodyY = -0.1;
+      p.squash = 0.92;
+      p.bodyTilt = 0.1;
+      p.headTilt = -0.12;
       break;
     case 'hit':
       p.bodyTilt = -0.5;
@@ -265,22 +278,34 @@ export function computePose(
     case 'knockback':
       // A fast, flailing tumble that sells being launched.
       p.bodyRotY = time * 13;
+      p.bodyRotX = Math.sin(time * 9) * 0.45;
       p.bodyTilt = -0.7;
       p.armLeft = -1.8 + Math.sin(time * 24) * 0.45;
       p.armRight = -1.8 - Math.sin(time * 24) * 0.45;
       p.legLeft = -0.9 + Math.sin(time * 20) * 0.3;
       p.legRight = -0.6 - Math.sin(time * 20) * 0.3;
       break;
-    case 'victory':
-      p.armLeft = -2.4;
-      p.armRight = -2.4;
-      p.bodyY = Math.abs(Math.sin(time * 4)) * 0.15;
+    case 'victory': {
+      // Alternating fist pumps with a bounce — a real celebration.
+      const beat = Math.sin(time * 6);
+      p.armLeft = -2.2 + Math.max(0, beat) * 0.7;
+      p.armRight = -2.2 + Math.max(0, -beat) * 0.7;
+      p.bodyY = Math.abs(Math.sin(time * 6)) * 0.18;
+      p.bodyRotY = Math.sin(time * 3) * 0.2;
+      p.headTilt = Math.sin(time * 6) * 0.08;
       break;
+    }
     case 'defeat':
-      p.bodyTilt = 0.9;
-      p.headTilt = 0.4;
-      p.armLeft = 0.3;
-      p.armRight = 0.3;
+      // Slumped kneel: sunk low, head hung, arms limp.
+      p.bodyY = -0.3;
+      p.squash = 0.9;
+      p.legLeft = 1.3;
+      p.legRight = 1.3;
+      p.bodyTilt = 0.35;
+      p.bodyRotX = 0.25;
+      p.headTilt = 0.5;
+      p.armLeft = 0.25;
+      p.armRight = 0.25;
       break;
   }
   void speed;

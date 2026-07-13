@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { getFighter } from '@/fighters/fighterData';
+import { useSettings } from '@/state/settingsStore';
 import type { Simulation } from '@/systems/simulation/Simulation';
 
 interface Callout {
@@ -23,6 +24,8 @@ interface Flash {
 export function Announcements({ sim }: { sim: Simulation }) {
   const [callouts, setCallouts] = useState<Callout[]>([]);
   const [flashes, setFlashes] = useState<Flash[]>([]);
+  const showCallouts = useSettings((s) => s.announcements);
+  const showFlash = useSettings((s) => s.screenFlash);
 
   useEffect(() => {
     let nextId = 1;
@@ -69,23 +72,26 @@ export function Announcements({ sim }: { sim: Simulation }) {
   if (callouts.length === 0 && flashes.length === 0) return null;
   return (
     <>
-      {flashes.map((f) => (
-        <div
-          key={f.id}
-          className="screen-flash"
-          style={{
-            background: `radial-gradient(120vmax circle at 50% 55%, ${f.color}66 0%, ${f.color}22 35%, transparent 70%)`,
-          }}
-        />
-      ))}
-      <div className="announce">
-        {callouts.map((c) => (
-          <div key={c.id} className={`announce-item announce-${c.kind}`} style={{ color: c.color }}>
-            <span className="announce-text">{c.text}</span>
-            <span className="announce-sub">{c.sub}</span>
-          </div>
+      {showFlash &&
+        flashes.map((f) => (
+          <div
+            key={f.id}
+            className="screen-flash"
+            style={{
+              background: `radial-gradient(120vmax circle at 50% 55%, ${f.color}66 0%, ${f.color}22 35%, transparent 70%)`,
+            }}
+          />
         ))}
-      </div>
+      {showCallouts && (
+        <div className="announce">
+          {callouts.map((c) => (
+            <div key={c.id} className={`announce-item announce-${c.kind}`} style={{ color: c.color }}>
+              <span className="announce-text">{c.text}</span>
+              <span className="announce-sub">{c.sub}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }

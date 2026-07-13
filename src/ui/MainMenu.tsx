@@ -4,14 +4,12 @@
 import { FIGHTERS } from '@/fighters/fighterData';
 import { useGame } from '@/state/gameStore';
 import { useDebug } from '@/state/debugStore';
-import { useRecords } from '@/state/recordsStore';
 import { audioManager } from '@/systems/audio/AudioManager';
 import { useTripleTap } from './useTripleTap';
 
 export function MainMenu() {
   const goto = useGame((s) => s.goto);
   const setMode = useGame((s) => s.setMode);
-  const bestScore = useRecords((s) => s.bestScore);
   const unlockDebug = useDebug((s) => s.unlock);
   const onLogoTap = useTripleTap(() => {
     audioManager.play('confirm');
@@ -56,8 +54,8 @@ export function MainMenu() {
         >
           Play
         </button>
-        <button className="btn menu-enter" style={{ animationDelay: '60ms' }} onClick={() => start('survive')}>
-          Survive{bestScore > 0 ? ` · Best ${bestScore}` : ''}
+        <button className="btn survive menu-enter" style={{ animationDelay: '60ms' }} onClick={() => start('survive')}>
+          🏆 Survive
         </button>
         <button className="btn menu-enter" style={{ animationDelay: '120ms' }} onClick={() => start('practice')}>
           Practice

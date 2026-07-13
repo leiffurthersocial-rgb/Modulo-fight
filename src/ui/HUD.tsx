@@ -21,6 +21,7 @@ export function HUD() {
   const fps = useGame((s) => s.fps);
   const mode = useGame((s) => s.mode);
   const showFps = useSettings((s) => s.showFps);
+  const showCombo = useSettings((s) => s.comboCounter);
   const timeLimit = useGame((s) => s.timeLimit);
 
   const player = hud.fighters.find((f) => f.isPlayer);
@@ -55,7 +56,7 @@ export function HUD() {
       )}
 
       {/* Live combo counter for the player. */}
-      {combo >= 2 && (
+      {showCombo && combo >= 2 && (
         <div className="combo" key={combo}>
           <span className="combo-count">{combo}</span>
           <span className="combo-label">HIT COMBO</span>

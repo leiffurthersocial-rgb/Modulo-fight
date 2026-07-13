@@ -47,6 +47,7 @@ export function GameScreen() {
   const batterySaver = useSettings((s) => s.batterySaver);
   const autoPauseOnBlur = useSettings((s) => s.autoPauseOnBlur);
   const hitMarkers = useSettings((s) => s.hitMarkers);
+  const effectsAmount = useSettings((s) => s.effectsAmount);
   const keyOverrides = useSettings((s) => s.keyOverrides);
   const debugOpen = useDebug((s) => s.open);
   const setDebugOpen = useDebug((s) => s.setOpen);
@@ -54,7 +55,9 @@ export function GameScreen() {
   // Battery saver overrides quality/effects regardless of the Quality setting.
   const effectiveQuality = batterySaver ? 'low' : quality;
   const effectiveCameraShake = cameraShake && !batterySaver;
-  const effectsScale = batterySaver ? 0.35 : 1;
+  const effectsScale = batterySaver
+    ? 0.35
+    : { low: 0.5, normal: 1, high: 1.5 }[effectsAmount];
 
   const [matchKey, setMatchKey] = useState(0);
   const [paused, setPaused] = useState(false);

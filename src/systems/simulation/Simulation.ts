@@ -222,6 +222,7 @@ export class Simulation {
     if (f.isPlayer) {
       if (debug.infiniteUlt) f.ultCharge = 1;
       if (debug.playerInvincible) f.invuln = Math.max(f.invuln, 0.2);
+      if (debug.noCooldowns) for (const k of Object.keys(f.cooldowns)) f.cooldowns[k] = 0;
     }
 
     // --- Countdown timers ---------------------------------------------------
@@ -310,7 +311,8 @@ export class Simulation {
   private handleShield(f: FighterRuntime, input: InputFrame, dt: number): void {
     if (input.shield && f.grounded && f.shield > 0.05) {
       f.shielding = true;
-      f.shield = clamp(f.shield - SHIELD_DRAIN * dt, 0, SHIELD_MAX);
+      const drainImmune = debug.infiniteShield && f.isPlayer;
+      if (!drainImmune) f.shield = clamp(f.shield - SHIELD_DRAIN * dt, 0, SHIELD_MAX);
       f.state = 'shield';
       f.vel.x = 0;
     } else {

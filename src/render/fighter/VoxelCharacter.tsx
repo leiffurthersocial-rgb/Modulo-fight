@@ -153,14 +153,15 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
   return (
     <group scale={[bulk, 1, bulk]}>
       {/* Legs (pivot at hip, extend downward). */}
-      <group ref={legL} position={[-0.16, 0.55, 0]}>
-        <Box args={[0.26, 0.55, 0.28]} position={[0, -0.28, 0]} color={pants} matRef={collect} />
-        <Box args={[0.29, 0.14, 0.36]} position={[0, -0.57, 0.04]} color={shoes} matRef={collect} />
-      </group>
-      <group ref={legR} position={[0.16, 0.55, 0]}>
-        <Box args={[0.26, 0.55, 0.28]} position={[0, -0.28, 0]} color={pants} matRef={collect} />
-        <Box args={[0.29, 0.14, 0.36]} position={[0, -0.57, 0.04]} color={shoes} matRef={collect} />
-      </group>
+      {[-1, 1].map((side) => (
+        <group key={side} ref={side < 0 ? legL : legR} position={[side * 0.16, 0.55, 0]}>
+          <Box args={[0.26, 0.55, 0.28]} position={[0, -0.28, 0]} color={pants} matRef={collect} />
+          {appearance.kneePads && (
+            <Box args={[0.28, 0.14, 0.3]} position={[0, -0.3, 0.03]} color={appearance.kneePads} matRef={collect} />
+          )}
+          <Box args={[0.29, 0.14, 0.36]} position={[0, -0.57, 0.04]} color={shoes} matRef={collect} />
+        </group>
+      ))}
 
       {/* Body root — the parent tilts/rotates this whole group. */}
       <group ref={body} position={[0, 0.55, 0]}>
@@ -178,20 +179,49 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
           <Box args={[0.46, 0.16, 0.42]} position={[0, 0.62, 0.02]} color={appearance.scarf} matRef={collect} />
         )}
 
-        {/* Arms (pivot at shoulder). */}
-        <group ref={armL} position={[-0.4, 0.55, 0]}>
-          <Box args={[0.18, 0.46, 0.2]} position={[0, -0.22, 0]} color={appearance.shirt} matRef={collect} />
-          <Box args={[0.18, 0.16, 0.2]} position={[0, -0.45, 0]} color={appearance.skin} matRef={collect} />
-          {/* Fist + accent wristband. */}
-          <Box args={[0.2, 0.06, 0.22]} position={[0, -0.55, 0]} color={appearance.accent} matRef={collect} />
-          <Box args={[0.22, 0.2, 0.24]} position={[0, -0.68, 0.01]} color={appearance.skin} matRef={collect} />
-        </group>
-        <group ref={armR} position={[0.4, 0.55, 0]}>
-          <Box args={[0.18, 0.46, 0.2]} position={[0, -0.22, 0]} color={appearance.shirt} matRef={collect} />
-          <Box args={[0.18, 0.16, 0.2]} position={[0, -0.45, 0]} color={appearance.skin} matRef={collect} />
-          <Box args={[0.2, 0.06, 0.22]} position={[0, -0.55, 0]} color={appearance.accent} matRef={collect} />
-          <Box args={[0.22, 0.2, 0.24]} position={[0, -0.68, 0.01]} color={appearance.skin} matRef={collect} />
-        </group>
+        {/* Arms (pivot at shoulder). Gloves swap the bare fists for chunkier
+            padded ones — an instantly readable brawler silhouette. */}
+        {[-1, 1].map((side) => (
+          <group key={side} ref={side < 0 ? armL : armR} position={[side * 0.4, 0.55, 0]}>
+            <Box args={[0.18, 0.46, 0.2]} position={[0, -0.22, 0]} color={appearance.shirt} matRef={collect} />
+            <Box args={[0.18, 0.16, 0.2]} position={[0, -0.45, 0]} color={appearance.skin} matRef={collect} />
+            <Box args={[0.2, 0.06, 0.22]} position={[0, -0.55, 0]} color={appearance.accent} matRef={collect} />
+            {appearance.gloves ? (
+              <Box args={[0.26, 0.24, 0.28]} position={[0, -0.69, 0.02]} color={appearance.gloves} matRef={collect} />
+            ) : (
+              <Box args={[0.22, 0.2, 0.24]} position={[0, -0.68, 0.01]} color={appearance.skin} matRef={collect} />
+            )}
+          </group>
+        ))}
+
+        {/* Optional shoulder pauldrons. */}
+        {appearance.shoulderPads && (
+          <>
+            <Box args={[0.28, 0.14, 0.3]} position={[-0.4, 0.64, 0]} color={appearance.shoulderPads} matRef={collect} roughness={0.4} metalness={0.35} />
+            <Box args={[0.28, 0.14, 0.3]} position={[0.4, 0.64, 0]} color={appearance.shoulderPads} matRef={collect} roughness={0.4} metalness={0.35} />
+          </>
+        )}
+        {/* Optional cape hanging behind the torso. */}
+        {appearance.cape && (
+          <Box args={[0.56, 0.78, 0.06]} position={[0, -0.02, -0.24]} color={appearance.cape} matRef={collect} roughness={0.85} />
+        )}
+        {/* Optional tech backpack with a glowing status light. */}
+        {appearance.backpack && (
+          <>
+            <Box args={[0.42, 0.44, 0.18]} position={[0, 0.3, -0.28]} color={appearance.backpack} matRef={collect} roughness={0.5} metalness={0.25} />
+            <mesh position={[0.1, 0.42, -0.38]}>
+              <boxGeometry args={[0.07, 0.07, 0.03]} />
+              <meshBasicMaterial color={appearance.accent} toneMapped={false} />
+            </mesh>
+          </>
+        )}
+        {/* Optional glowing chest pendant. */}
+        {appearance.pendant && (
+          <mesh position={[0, 0.42, 0.2]}>
+            <boxGeometry args={[0.1, 0.12, 0.05]} />
+            <meshBasicMaterial color={appearance.accent} toneMapped={false} />
+          </mesh>
+        )}
 
         {/* Head group. */}
         <group ref={head} position={[0, 0.86, 0]}>

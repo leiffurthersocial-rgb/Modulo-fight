@@ -101,63 +101,84 @@ export function DebugMenu({ sim, onClose }: Props) {
           Survive runs won't count toward records.
         </div>
 
-        {/* Simulation tuning */}
+        {/* Simulation tuning — the three global multipliers, side by side. */}
         <div className="debug-section">
-          <div className="debug-title">Simulation</div>
-          <Slider
-            label="Time Scale"
-            value={d.timeScale}
-            min={0.1}
-            max={2}
-            step={0.05}
-            onChange={(v) => d.setFlag('timeScale', v)}
-            format={(v) => `${v.toFixed(2)}×`}
-          />
-          <Slider
-            label="Gravity"
-            value={d.gravityScale}
-            min={0.2}
-            max={2}
-            step={0.05}
-            onChange={(v) => d.setFlag('gravityScale', v)}
-            format={(v) => `${v.toFixed(2)}×`}
-          />
-          <Slider
-            label="Knockback"
-            value={d.knockbackScale}
-            min={0.2}
-            max={3}
-            step={0.05}
-            onChange={(v) => d.setFlag('knockbackScale', v)}
-            format={(v) => `${v.toFixed(2)}×`}
-          />
-        </div>
-
-        {/* Player cheats */}
-        <div className="debug-section">
-          <div className="debug-title">Player</div>
+          <div className="debug-title">⏱ Simulation</div>
+          <div className="debug-sliders">
+            <Slider
+              label="Time Scale"
+              value={d.timeScale}
+              min={0.1}
+              max={2}
+              step={0.05}
+              onChange={(v) => d.setFlag('timeScale', v)}
+              format={(v) => `${v.toFixed(2)}×`}
+            />
+            <Slider
+              label="Gravity"
+              value={d.gravityScale}
+              min={0.2}
+              max={2}
+              step={0.05}
+              onChange={(v) => d.setFlag('gravityScale', v)}
+              format={(v) => `${v.toFixed(2)}×`}
+            />
+            <Slider
+              label="Knockback"
+              value={d.knockbackScale}
+              min={0.2}
+              max={3}
+              step={0.05}
+              onChange={(v) => d.setFlag('knockbackScale', v)}
+              format={(v) => `${v.toFixed(2)}×`}
+            />
+          </div>
           <div className="chips">
-            <Toggle label="Invincible" value={d.playerInvincible} onChange={(v) => d.setFlag('playerInvincible', v)} />
-            <Toggle label="Infinite Ultimate" value={d.infiniteUlt} onChange={(v) => d.setFlag('infiniteUlt', v)} />
-            <Toggle label="Unlimited Jumps" value={d.unlimitedJumps} onChange={(v) => d.setFlag('unlimitedJumps', v)} />
+            <button
+              className="btn small"
+              onClick={() => {
+                d.setFlag('timeScale', 1);
+                d.setFlag('gravityScale', 1);
+                d.setFlag('knockbackScale', 1);
+              }}
+            >
+              Reset to 1×
+            </button>
+            <button className="btn small" onClick={() => d.setFlag('timeScale', 0.3)}>
+              Slow-Mo 0.3×
+            </button>
           </div>
         </div>
 
-        {/* Bots + visualization */}
-        <div className="debug-section">
-          <div className="debug-title">Bots & Visualization</div>
-          <div className="chips">
-            <Toggle label="Freeze Bots" value={d.freezeBots} onChange={(v) => d.setFlag('freezeBots', v)} />
-            <Toggle label="Show Hitboxes" value={d.showHitboxes} onChange={(v) => d.setFlag('showHitboxes', v)} />
-            <Toggle label="Show Bounds" value={d.showBounds} onChange={(v) => d.setFlag('showBounds', v)} />
-            <Toggle label="Fighter Info" value={d.showFighterInfo} onChange={(v) => d.setFlag('showFighterInfo', v)} />
+        <div className="debug-grid">
+          {/* Player cheats */}
+          <div className="debug-section">
+            <div className="debug-title">🥊 Player Cheats</div>
+            <div className="chips">
+              <Toggle label="Invincible" value={d.playerInvincible} onChange={(v) => d.setFlag('playerInvincible', v)} />
+              <Toggle label="Infinite Ultimate" value={d.infiniteUlt} onChange={(v) => d.setFlag('infiniteUlt', v)} />
+              <Toggle label="No Cooldowns" value={d.noCooldowns} onChange={(v) => d.setFlag('noCooldowns', v)} />
+              <Toggle label="Infinite Shield" value={d.infiniteShield} onChange={(v) => d.setFlag('infiniteShield', v)} />
+              <Toggle label="Unlimited Jumps" value={d.unlimitedJumps} onChange={(v) => d.setFlag('unlimitedJumps', v)} />
+            </div>
+          </div>
+
+          {/* Bots + visualization overlays */}
+          <div className="debug-section">
+            <div className="debug-title">🤖 Bots & Overlays</div>
+            <div className="chips">
+              <Toggle label="Freeze Bots" value={d.freezeBots} onChange={(v) => d.setFlag('freezeBots', v)} />
+              <Toggle label="Show Hitboxes" value={d.showHitboxes} onChange={(v) => d.setFlag('showHitboxes', v)} />
+              <Toggle label="Show Bounds" value={d.showBounds} onChange={(v) => d.setFlag('showBounds', v)} />
+              <Toggle label="Fighter Info" value={d.showFighterInfo} onChange={(v) => d.setFlag('showFighterInfo', v)} />
+            </div>
           </div>
         </div>
 
         {/* Practice controls */}
         {isPractice && (
           <div className="debug-section">
-            <div className="debug-title">Practice Dummy</div>
+            <div className="debug-title">🎯 Practice Dummy</div>
             <div className="field">
               <span className="field-label">Behavior</span>
               <div className="chips">
@@ -197,7 +218,7 @@ export function DebugMenu({ sim, onClose }: Props) {
         {/* Live actions */}
         {inGame && sim && (
           <div className="debug-section">
-            <div className="debug-title">Live Actions</div>
+            <div className="debug-title">⚡ Live Actions</div>
             <div className="chips">
               <button className="btn small" onClick={() => sim.resetPositions()}>
                 Reset Positions
@@ -234,7 +255,7 @@ export function DebugMenu({ sim, onClose }: Props) {
         )}
 
         <div className="debug-section">
-          <div className="debug-title">Manage</div>
+          <div className="debug-title">🧰 Manage</div>
           <div className="chips">
             <button className="btn small" onClick={() => d.resetFlags()}>
               Reset Debug Flags

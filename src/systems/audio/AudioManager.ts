@@ -19,6 +19,7 @@ export type Sfx =
   | 'ultimate'
   | 'knockout'
   | 'shield'
+  | 'syphon'
   | 'select'
   | 'confirm';
 
@@ -115,6 +116,9 @@ export class AudioManager {
       case 'shield':
         this.play('shield');
         break;
+      case 'syphon':
+        this.play('syphon');
+        break;
     }
   }
 
@@ -155,6 +159,11 @@ export class AudioManager {
         break;
       case 'shield':
         this.blip(ctx, this.sfxGain, t, 640, 720, 0.12, 'sine', 0.3);
+        break;
+      case 'syphon':
+        // A drain-then-restore sweep: falling tone into a rising shimmer.
+        this.blip(ctx, this.sfxGain, t, 720, 240, 0.16, 'sine', 0.28);
+        this.blip(ctx, this.sfxGain, t + 0.07, 260, 900, 0.2, 'sine', 0.22);
         break;
       case 'select':
         this.blip(ctx, this.sfxGain, t, 480, 520, 0.05, 'square', 0.25);

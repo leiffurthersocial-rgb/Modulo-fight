@@ -14,6 +14,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { FIGHTER_HALF_HEIGHT } from '@/core/constants';
 import { clamp, damp } from '@/core/math';
+import { useSettings } from '@/state/settingsStore';
 import { effectiveReach, type FighterRuntime } from '@/systems/simulation/FighterRuntime';
 import { computePose, deriveAttackStyle, type AttackStyle } from './poses';
 import { VoxelCharacter, type CharacterRefs } from './VoxelCharacter';
@@ -108,6 +109,7 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
 
     c.body.position.y = 0.55 + pose.bodyY;
     c.body.rotation.z = pose.bodyTilt * -runtime.facing;
+    c.body.rotation.x = pose.bodyRotX;
     c.body.rotation.y = pose.bodyRotY;
     c.body.scale.setScalar(1);
     c.body.scale.y = pose.squash;
@@ -201,8 +203,9 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
     // --- Speed streak ------------------------------------------------------
     // A camera-facing accent smear that grows with horizontal speed / dashing.
     if (trail.current && trailMat.current) {
+      const streaksOn = useSettings.getState().speedStreaks;
       const dashing = runtime.state === 'dash' || runtime.state === 'dodge';
-      const norm = clamp((speed - 6.5) / 16, 0, 1) + (dashing ? 0.5 : 0);
+      const norm = streaksOn ? clamp((speed - 6.5) / 16, 0, 1) + (dashing ? 0.5 : 0) : 0;
       s.trail = damp(s.trail, Math.min(norm, 1), 20, dt);
       if (s.trail > 0.02) {
         trail.current.visible = true;

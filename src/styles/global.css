@@ -265,6 +265,22 @@ button {
   }
 }
 
+/* Survive — the challenge mode gets its own gold treatment so it reads as a
+   headline mode, clearly apart from utility buttons like Settings. */
+.btn.survive {
+  border: 1px solid rgba(255, 213, 74, 0.55);
+  background: linear-gradient(120deg, rgba(255, 213, 74, 0.16), rgba(255, 157, 60, 0.1));
+  color: var(--accent-2);
+  font-weight: 700;
+  box-shadow: 0 0 18px rgba(255, 213, 74, 0.14);
+}
+
+.btn.survive:hover {
+  border-color: var(--accent-2);
+  background: linear-gradient(120deg, rgba(255, 213, 74, 0.26), rgba(255, 157, 60, 0.16));
+  box-shadow: 0 0 26px rgba(255, 213, 74, 0.3);
+}
+
 .btn.ghost {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1219,6 +1235,33 @@ input[type='range']::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Two-column layout for compact debug sections. */
+.debug-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .debug-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The three global multiplier sliders sit side by side. */
+.debug-sliders {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .debug-sliders {
+    grid-template-columns: 1fr;
+  }
 }
 
 .debug-title {

@@ -122,7 +122,9 @@ export function resolveAttackHits(
 
     // Shielding absorbs the hit but drains the shield.
     if (victim.shielding && victim.shield > 0) {
-      victim.shield = clamp(victim.shield - attack.data.damage * 0.05, 0, 1);
+      if (!(debug.infiniteShield && victim.isPlayer)) {
+        victim.shield = clamp(victim.shield - attack.data.damage * 0.05, 0, 1);
+      }
       events.emit({ type: 'shield', pos: { ...victim.pos } });
       if (victim.shield > 0) continue;
     }
@@ -155,6 +157,21 @@ function applyHit(
   attacker.totalDamageDealt += damage;
   victim.totalDamageTaken += damage;
   victim.lastHitBy = attacker.config.id;
+
+  // Syphon: the move drains a fraction of the damage dealt, reducing the
+  // attacker's own %. Capped per hit so it's sustain, never a full reset.
+  if (attack.syphon && attacker.damage > 0) {
+    const heal = Math.min(damage * attack.syphon, 8, attacker.damage);
+    if (heal > 0.1) {
+      attacker.damage = clamp(attacker.damage - heal, 0, 999);
+      events.emit({
+        type: 'syphon',
+        pos: { ...attacker.pos },
+        amount: heal,
+        fighterId: attacker.config.id,
+      });
+    }
+  }
 
   // --- Knockback ---------------------------------------------------------
   let kb = knockbackMagnitude(attack, victim);

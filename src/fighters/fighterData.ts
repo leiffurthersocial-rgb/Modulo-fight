@@ -39,6 +39,7 @@ export const FIGHTERS: FighterConfig[] = [
       shoes: '#c8402f',
       build: 'normal',
       headband: '#ffd54a',
+      gloves: '#c8402f',
       accent: '#ffd54a',
     },
     attacks: {
@@ -93,6 +94,7 @@ export const FIGHTERS: FighterConfig[] = [
       pants: '#3a3d45',
       shoes: '#38d0ff',
       build: 'lean',
+      scarf: '#38d0ff',
       accent: '#38d0ff',
     },
     attacks: {
@@ -143,6 +145,7 @@ export const FIGHTERS: FighterConfig[] = [
       pants: '#2f4a35',
       shoes: '#25352a',
       build: 'normal',
+      cape: '#24382b',
       accent: '#8affc1',
     },
     attacks: {
@@ -197,6 +200,8 @@ export const FIGHTERS: FighterConfig[] = [
       shoes: '#241812',
       build: 'heavy',
       scarf: '#ff7a3c',
+      shoulderPads: '#b08d57',
+      cape: '#5e1f1f',
       accent: '#ff7a3c',
     },
     attacks: {
@@ -238,7 +243,7 @@ export const FIGHTERS: FighterConfig[] = [
     name: 'Erim',
     role: 'Counter-Puncher',
     emoji: '🧠',
-    blurb: 'Durable and patient — punishes whiffs with heavy counter-hits.',
+    blurb: 'Durable and patient — punishes whiffs with counter-hits and drains health with Syphon Pulse.',
     personality: 'Patient, analytical, punishes mistakes.',
     passive: 'counterForce',
     passiveDescription: 'Hitting a foe who is mid-attack deals +32% knockback and +20% damage (counter-hit).',
@@ -253,6 +258,7 @@ export const FIGHTERS: FighterConfig[] = [
       pants: '#1a2236',
       shoes: '#12161f',
       build: 'normal',
+      pendant: true,
       accent: '#7c5cff',
       glasses: true,
       goatee: true,
@@ -267,12 +273,14 @@ export const FIGHTERS: FighterConfig[] = [
         description: 'A precise blow — devastating as a counter-hit thanks to his passive.',
       }),
       special: makeAttack('special', {
-        name: 'Energy Shield',
-        description: 'A burst of shielding energy that shoves and staggers attackers.',
-        damage: 6,
+        name: 'Syphon Pulse',
+        description:
+          'A draining energy pulse — damage dealt syphons back, reducing his own damage %.',
+        damage: 8,
+        syphon: 0.6,
         baseKnockback: 5,
         angle: Math.PI * 0.35,
-        reach: 1.4,
+        reach: 1.5,
         cooldown: 2.4,
       }),
       ultimate: makeAttack('ultimate', {
@@ -309,6 +317,7 @@ export const FIGHTERS: FighterConfig[] = [
       shoes: '#6affea',
       build: 'lean',
       headband: '#6affea',
+      kneePads: '#2f9a5a',
       accent: '#6affea',
     },
     attacks: {
@@ -361,6 +370,7 @@ export const FIGHTERS: FighterConfig[] = [
       pants: '#4a4a2c',
       shoes: '#2c2c1a',
       build: 'normal',
+      backpack: '#2c3a30',
       accent: '#b6ff3c',
       glasses: true,
     },
@@ -423,6 +433,8 @@ export const FIGHTERS: FighterConfig[] = [
       shoes: '#1a1012',
       build: 'heavy',
       headband: '#ff4d6d',
+      gloves: '#26222a',
+      shoulderPads: '#443c48',
       accent: '#ff4d6d',
     },
     attacks: {

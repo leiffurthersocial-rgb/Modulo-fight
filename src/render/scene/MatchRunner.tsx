@@ -11,6 +11,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getFighter } from '@/fighters/fighterData';
 import { useGame } from '@/state/gameStore';
+import { useSettings } from '@/state/settingsStore';
 import {
   createCameraState,
   DEFAULT_CAMERA_TUNING,
@@ -54,11 +55,17 @@ export function MatchRunner({ sim, beginFrame, endFrame, cameraShake, onFinished
     sim.advance(dt);
     endFrame();
 
-    // 2. Camera framing over all living fighters.
+    // 2. Camera framing over all living fighters, scaled by the zoom setting.
     const points = sim.fighters
       .filter((f) => !f.eliminated && f.respawnTimer <= 0)
       .map((f) => ({ x: f.pos.x, y: f.pos.y }));
-    const tuning = { ...DEFAULT_CAMERA_TUNING, aspect: size.width / Math.max(1, size.height) };
+    const zoomMul = { close: 0.85, default: 1, wide: 1.18 }[useSettings.getState().cameraZoom];
+    const tuning = {
+      ...DEFAULT_CAMERA_TUNING,
+      minDistance: DEFAULT_CAMERA_TUNING.minDistance * zoomMul,
+      maxDistance: DEFAULT_CAMERA_TUNING.maxDistance * zoomMul,
+      aspect: size.width / Math.max(1, size.height),
+    };
     updateCamera(cam, points, tuning, dt);
 
     // 3. Apply to the actual camera, with decaying shake.

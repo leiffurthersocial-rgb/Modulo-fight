@@ -16,6 +16,7 @@ export type GameEvent =
   | { type: 'ultimate'; pos: Vec2; fighterId: string }
   | { type: 'knockout'; pos: Vec2; victimId: string }
   | { type: 'shield'; pos: Vec2 }
+  | { type: 'syphon'; pos: Vec2; amount: number; fighterId: string }
   | { type: 'wave'; wave: number; score: number };
 
 export type GameEventHandler = (e: GameEvent) => void;

@@ -119,6 +119,12 @@ export interface AttackData {
    * damage). Omit for a normal one-hit-per-swing attack.
    */
   hitInterval?: number;
+  /**
+   * Syphon: fraction of the damage dealt that is drained back, reducing the
+   * attacker's own damage % on hit. Deliberately small-scale — a sustain tool,
+   * not a reset button (healing is also capped per hit in the combat system).
+   */
+  syphon?: number;
 }
 
 /** Passive ability identifiers — resolved in the combat system. */
@@ -159,6 +165,18 @@ export interface FighterAppearance {
   headband?: string;
   /** Optional scarf colour (worn around the neck). */
   scarf?: string;
+  /** Optional boxing-style glove colour (replaces bare fists). */
+  gloves?: string;
+  /** Optional cape colour (hangs from the shoulders behind the torso). */
+  cape?: string;
+  /** Optional shoulder-pad colour (armoured pauldrons). */
+  shoulderPads?: string;
+  /** Optional backpack colour (tech pack with a glowing accent light). */
+  backpack?: string;
+  /** Optional knee-pad colour. */
+  kneePads?: string;
+  /** Optional glowing chest pendant (accent-coloured, emissive). */
+  pendant?: boolean;
   /** Optional accessory flags. */
   glasses?: boolean;
   goatee?: boolean;

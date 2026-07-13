@@ -159,6 +159,10 @@ export function Particles({ events, maxParticles = DEFAULT_MAX_PARTICLES }: Prop
         case 'shield':
           spawn(e.pos.x, e.pos.y, 8, 4, [0.6, 0.9, 1], 0.14, 0.4);
           break;
+        case 'syphon':
+          // Gentle accent sparkles around the drainer — life flowing back in.
+          spawn(e.pos.x, e.pos.y + 0.5, 12, 3, accentRgb(e.fighterId), 0.13, 0.6);
+          break;
         case 'land': {
           // Low, wide dust kicked sideways along the ground.
           const n = Math.min(4 + Math.floor((e.power ?? 0) * 0.4), 14);

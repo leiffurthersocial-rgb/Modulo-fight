@@ -8,6 +8,12 @@ import { DEFAULT_BINDINGS, type Action, type Bindings } from '@/systems/input/Ke
 
 export type Quality = 'low' | 'medium' | 'high';
 
+/** Density of ambient/combat particles (scales pool sizes and counts). */
+export type EffectsAmount = 'low' | 'normal' | 'high';
+
+/** Preferred camera framing distance. */
+export type CameraZoom = 'close' | 'default' | 'wide';
+
 /** Actions the player is allowed to remap to a single custom key. */
 export const REMAPPABLE_ACTIONS: Action[] = [
   'up',
@@ -61,6 +67,18 @@ interface SettingsState {
   autoPauseOnBlur: boolean;
   /** Show an impact "X" marker on every hit. */
   hitMarkers: boolean;
+  /** Full-screen colour flash on ultimates and KOs. */
+  screenFlash: boolean;
+  /** Big "K.O.!" / ultimate callout banners. */
+  announcements: boolean;
+  /** On-screen combo counter for the player. */
+  comboCounter: boolean;
+  /** Accent-coloured motion streaks when fighters move fast. */
+  speedStreaks: boolean;
+  /** Ambient/combat particle density. */
+  effectsAmount: EffectsAmount;
+  /** How tightly the camera frames the action. */
+  cameraZoom: CameraZoom;
   /** Player's custom key overrides. */
   keyOverrides: KeyOverrides;
 
@@ -75,6 +93,12 @@ interface SettingsState {
   setBatterySaver: (s: boolean) => void;
   setAutoPauseOnBlur: (s: boolean) => void;
   setHitMarkers: (s: boolean) => void;
+  setScreenFlash: (s: boolean) => void;
+  setAnnouncements: (s: boolean) => void;
+  setComboCounter: (s: boolean) => void;
+  setSpeedStreaks: (s: boolean) => void;
+  setEffectsAmount: (a: EffectsAmount) => void;
+  setCameraZoom: (z: CameraZoom) => void;
   setKeyOverride: (action: Action, code: string) => void;
   resetKeyOverrides: () => void;
   /** Restore every setting (audio, graphics, controls, …) to its default. */
@@ -93,6 +117,12 @@ const SETTINGS_DEFAULTS = {
   batterySaver: false,
   autoPauseOnBlur: true,
   hitMarkers: true,
+  screenFlash: true,
+  announcements: true,
+  comboCounter: true,
+  speedStreaks: true,
+  effectsAmount: 'normal' as EffectsAmount,
+  cameraZoom: 'default' as CameraZoom,
   keyOverrides: {} as KeyOverrides,
 };
 
@@ -123,6 +153,12 @@ function persist(state: SettingsState): void {
         batterySaver: state.batterySaver,
         autoPauseOnBlur: state.autoPauseOnBlur,
         hitMarkers: state.hitMarkers,
+        screenFlash: state.screenFlash,
+        announcements: state.announcements,
+        comboCounter: state.comboCounter,
+        speedStreaks: state.speedStreaks,
+        effectsAmount: state.effectsAmount,
+        cameraZoom: state.cameraZoom,
         keyOverrides: state.keyOverrides,
       }),
     );
@@ -155,6 +191,12 @@ export const useSettings = create<SettingsState>((set, get) => {
     batterySaver: saved.batterySaver ?? false,
     autoPauseOnBlur: saved.autoPauseOnBlur ?? true,
     hitMarkers: saved.hitMarkers ?? true,
+    screenFlash: saved.screenFlash ?? true,
+    announcements: saved.announcements ?? true,
+    comboCounter: saved.comboCounter ?? true,
+    speedStreaks: saved.speedStreaks ?? true,
+    effectsAmount: saved.effectsAmount ?? 'normal',
+    cameraZoom: saved.cameraZoom ?? 'default',
     keyOverrides: saved.keyOverrides ?? {},
 
     setMasterVolume: (v) => {
@@ -203,6 +245,30 @@ export const useSettings = create<SettingsState>((set, get) => {
     },
     setHitMarkers: (s) => {
       set({ hitMarkers: s });
+      commit();
+    },
+    setScreenFlash: (s) => {
+      set({ screenFlash: s });
+      commit();
+    },
+    setAnnouncements: (s) => {
+      set({ announcements: s });
+      commit();
+    },
+    setComboCounter: (s) => {
+      set({ comboCounter: s });
+      commit();
+    },
+    setSpeedStreaks: (s) => {
+      set({ speedStreaks: s });
+      commit();
+    },
+    setEffectsAmount: (a) => {
+      set({ effectsAmount: a });
+      commit();
+    },
+    setCameraZoom: (z) => {
+      set({ cameraZoom: z });
       commit();
     },
     setKeyOverride: (action, code) => {
