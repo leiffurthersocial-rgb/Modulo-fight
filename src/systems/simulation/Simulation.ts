@@ -276,7 +276,8 @@ export class Simulation {
     updateAttack(f, dt);
 
     // Slow passive ultimate charge so ults are always eventually reachable.
-    f.ultCharge = clamp(f.ultCharge + dt * 0.018, 0, 1);
+    // Per-fighter rate: strong ults charge slower, modest ults faster.
+    f.ultCharge = clamp(f.ultCharge + dt * 0.018 * (f.config.ultChargeRate ?? 1), 0, 1);
 
     if (f.respawnTimer > 0) {
       f.respawnTimer = Math.max(0, f.respawnTimer - dt);

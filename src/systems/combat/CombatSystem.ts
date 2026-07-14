@@ -228,7 +228,7 @@ export function applyHit(
     });
     attacker.comboCount += 1;
     attacker.comboTimer = COMBO_RESET_TIME;
-    attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012, 0, 1);
+    attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012 * (attacker.config.ultChargeRate ?? 1), 0, 1);
     return;
   }
 
@@ -241,7 +241,7 @@ export function applyHit(
     victim.attack = null;
     attacker.comboCount += 1;
     attacker.comboTimer = COMBO_RESET_TIME;
-    attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012, 0, 1);
+    attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012 * (attacker.config.ultChargeRate ?? 1), 0, 1);
     victim.ultCharge = clamp(victim.ultCharge + damage * 0.006, 0, 1);
     events.emit({
       type: 'hit',
@@ -272,7 +272,7 @@ export function applyHit(
   // --- Combo tracking (attacker builds combos, feeds ult charge) ---------
   attacker.comboCount += 1;
   attacker.comboTimer = COMBO_RESET_TIME;
-  attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012, 0, 1);
+  attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012 * (attacker.config.ultChargeRate ?? 1), 0, 1);
   // The victim also charges a little ult meter from taking damage (comeback).
   victim.ultCharge = clamp(victim.ultCharge + damage * 0.006, 0, 1);
 

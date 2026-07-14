@@ -9,8 +9,16 @@
  * Beyond raw stats, fighters differ in *mobility feel* via optional
  * `airControl` and `gravityMul`: acrobats (Till) float and steer hard in the
  * air, speedsters (Leif) are nimble, and heavies (Leonidas, Tusya) fast-fall
- * and drift like bricks. This gives each character a distinct aerial identity
- * that pure numbers can't express.
+ * and drift like bricks. Every fighter's jump is tuned so a double jump can
+ * reach every platform on every stage — verified against the arena layouts.
+ *
+ * The central balance lever is `ultChargeRate`: a fighter's ultimate power is
+ * paid for in patience. Devastating ults charge slowly (Lenni's Kloten Kick,
+ * 0.70 → ~79s passively; Jovan's Glorious Strike, 0.80), while modest ults
+ * charge fast (Till's Sky Storm, 1.20 → ~46s). So a character can have a
+ * game-ending ult *or* a weak ult with a great passive / special / normals
+ * (Erim: modest Laser Barrage, but a counter passive AND life-draining Syphon
+ * Pulse), and neither is strictly better — just a different rhythm to master.
  *
  * Adding a new fighter is just appending a config here.
  */
@@ -28,6 +36,7 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'comboGrowth',
     passiveDescription: 'Each hit in a combo deals up to +40% more damage the longer it continues.',
     extraJumps: 1,
+    ultChargeRate: 1.0,
     stats: { speed: 6.4, weight: 1.05, strength: 1.0, jumpHeight: 16.3, knockbackResist: 0.1 },
     appearance: {
       skin: '#f2c9a0',
@@ -86,6 +95,7 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'runSpeed',
     passiveDescription: 'Highest running speed on the roster; closes distance instantly.',
     extraJumps: 1,
+    ultChargeRate: 0.95,
     stats: {
       speed: 8.0, weight: 0.88, strength: 0.9, jumpHeight: 16.8, knockbackResist: 0,
       airControl: 1.25,
@@ -147,6 +157,7 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'reach',
     passiveDescription: 'All attacks reach noticeably farther than anyone else’s.',
     extraJumps: 1,
+    ultChargeRate: 0.8,
     stats: { speed: 6.1, weight: 0.95, strength: 1.0, jumpHeight: 17.2, knockbackResist: 0.04 },
     appearance: {
       skin: '#e6bd97',
@@ -201,14 +212,15 @@ export const FIGHTERS: FighterConfig[] = [
     name: 'Leonidas',
     role: 'Tank',
     emoji: '🛡️',
-    blurb: 'Heaviest and hardest to launch, but slow and low-jumping.',
+    blurb: 'Heaviest and hardest to launch — an immovable wall that trades speed for staying power.',
     personality: 'Immovable, proud, speaks softly.',
     passive: 'knockbackArmor',
     passiveDescription: 'Takes 28% less knockback from every hit — survives to absurd percents.',
     extraJumps: 1,
+    ultChargeRate: 0.85,
     stats: {
-      speed: 5.0, weight: 1.5, strength: 1.12, jumpHeight: 14.0, knockbackResist: 0.3,
-      airControl: 0.8, gravityMul: 1.12,
+      speed: 5.0, weight: 1.5, strength: 1.12, jumpHeight: 15.4, knockbackResist: 0.3,
+      airControl: 0.8, gravityMul: 1.04,
     },
     appearance: {
       skin: '#d9a273',
@@ -273,6 +285,7 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'counterForce',
     passiveDescription: 'Hitting a foe who is mid-attack deals +32% knockback and +20% damage (counter-hit).',
     extraJumps: 1,
+    ultChargeRate: 1.05,
     stats: { speed: 5.9, weight: 1.12, strength: 0.92, jumpHeight: 15.8, knockbackResist: 0.2 },
     appearance: {
       skin: '#cf9f74',
@@ -333,6 +346,7 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'tripleJump',
     passiveDescription: 'Jumps three times before landing — unmatched recovery and air control.',
     extraJumps: 2,
+    ultChargeRate: 1.2,
     stats: {
       speed: 6.9, weight: 0.82, strength: 0.85, jumpHeight: 18.9, knockbackResist: 0,
       airControl: 1.4, gravityMul: 0.86,
@@ -392,6 +406,7 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'precision',
     passiveDescription: 'Heavy and special attacks land with +18% knockback when they connect cleanly.',
     extraJumps: 1,
+    ultChargeRate: 0.7,
     stats: {
       speed: 6.6, weight: 0.98, strength: 1.12, jumpHeight: 16.9, knockbackResist: 0.06,
       gravityMul: 0.92,
@@ -454,9 +469,10 @@ export const FIGHTERS: FighterConfig[] = [
     passive: 'heavyStun',
     passiveDescription: 'Heavy attacks briefly stun on hit, guaranteeing a follow-up.',
     extraJumps: 1,
+    ultChargeRate: 0.85,
     stats: {
-      speed: 4.9, weight: 1.4, strength: 1.24, jumpHeight: 14.4, knockbackResist: 0.14,
-      airControl: 0.85, gravityMul: 1.1,
+      speed: 4.9, weight: 1.4, strength: 1.24, jumpHeight: 15.3, knockbackResist: 0.14,
+      airControl: 0.85, gravityMul: 1.04,
     },
     appearance: {
       skin: '#6b4a34',

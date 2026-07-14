@@ -19,6 +19,16 @@ import { ControlsCard } from './Controls';
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'insane'];
 
+/** Bucket a fighter's ultimate charge rate into a readable tier. */
+function ultChargeTier(rate = 1): 'slow' | 'normal' | 'fast' {
+  if (rate <= 0.9) return 'slow';
+  if (rate >= 1.1) return 'fast';
+  return 'normal';
+}
+function ultChargeLabel(rate = 1): string {
+  return { slow: 'Slow', normal: 'Normal', fast: 'Fast' }[ultChargeTier(rate)];
+}
+
 const BEHAVIORS: { id: TrainingBehavior; label: string }[] = [
   { id: 'stand', label: 'No Reaction' },
   { id: 'ai', label: 'Fight (AI)' },
@@ -327,6 +337,9 @@ export function CharacterSelect() {
             <div className="move-block">
               <span className="move-head">
                 <span className="kbd">U</span> {selected.attacks.ultimate.name} — Ultimate
+                <span className={`charge-badge charge-${ultChargeTier(selected.ultChargeRate)}`}>
+                  {ultChargeLabel(selected.ultChargeRate)} charge
+                </span>
               </span>
               <p className="move-desc">{selected.attacks.ultimate.description}</p>
             </div>

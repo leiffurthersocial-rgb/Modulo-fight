@@ -230,6 +230,14 @@ export interface FighterConfig {
   attacks: Record<AttackKind, AttackData>;
   /** Number of extra mid-air jumps (1 = double jump). */
   extraJumps: number;
+  /**
+   * How fast this fighter fills their ultimate meter (multiplier, default 1).
+   * The core balance lever: devastating ultimates charge slowly (<1) while
+   * modest ones charge quickly (>1), so a fighter with a game-ending ult pays
+   * for it in patience, and a fighter with a weaker ult gets to use it often.
+   * Scales both the passive charge tick and charge gained by dealing damage.
+   */
+  ultChargeRate?: number;
 }
 
 /** A rectangular platform in the arena (AABB in the XY plane). */

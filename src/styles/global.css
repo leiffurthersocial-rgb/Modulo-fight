@@ -487,6 +487,36 @@ button {
   color: var(--text);
 }
 
+/* Ultimate charge-speed badge on the character-select detail. */
+.charge-badge {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.charge-slow {
+  color: #ff9d6b;
+  background: rgba(255, 120, 60, 0.14);
+  border-color: rgba(255, 120, 60, 0.4);
+}
+
+.charge-normal {
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.charge-fast {
+  color: var(--good);
+  background: rgba(106, 255, 176, 0.12);
+  border-color: rgba(106, 255, 176, 0.4);
+}
+
 /* ---- Survive info panel ---- */
 .survive-info {
   background: rgba(255, 213, 74, 0.08);
