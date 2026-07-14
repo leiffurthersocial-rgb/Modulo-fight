@@ -155,6 +155,25 @@ export function nearestGround(arena: ArenaConfig, x: number): Platform | null {
   return best;
 }
 
+/**
+ * The specific platform a grounded fighter's feet are actually resting on —
+ * matched by height, not just "the tallest platform under this x". Stages
+ * like Sky Temple stack a floating platform directly above the main one, so
+ * `nearestGround` (topmost-by-x) can return the wrong platform entirely for
+ * a fighter standing on the lower one; this is what edge-aware ultimate
+ * movement (e.g. a ground-locked dash) needs instead.
+ */
+export function standingPlatform(arena: ArenaConfig, feetY: number, x: number): Platform | null {
+  for (const p of arena.platforms) {
+    const top = p.y + p.height / 2;
+    if (Math.abs(feetY - top) > 0.05) continue;
+    const left = p.x - p.width / 2;
+    const right = p.x + p.width / 2;
+    if (x >= left && x <= right) return p;
+  }
+  return null;
+}
+
 /** Returns true if the fighter has crossed a blast zone this step. */
 export function crossedBlastZone(f: FighterRuntime, arena: ArenaConfig): boolean {
   const b = arena.blastZone;
