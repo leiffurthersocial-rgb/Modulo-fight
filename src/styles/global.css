@@ -294,7 +294,13 @@ button {
 
 .panel {
   position: relative;
-  overflow: hidden;
+  /* No `overflow: hidden` here: the accent hairline below is already bounded
+     by its own absolute positioning, and hiding overflow on a flex child
+     lets it shrink below its content height instead of overflowing — which
+     silently clips anything past the fold (e.g. the Start button) with no
+     way to scroll to it. `flex-shrink: 0` keeps the panel at its natural
+     content height so `.menu`'s overflow-y: auto can always reach it. */
+  flex-shrink: 0;
   background: var(--panel);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius);
