@@ -10,12 +10,13 @@ import type { Vec2 } from '@/core/types';
 export type GameEvent =
   | { type: 'hit'; pos: Vec2; power: number; attackerId: string; victimId: string }
   | { type: 'jump'; pos: Vec2 }
-  | { type: 'land'; pos: Vec2 }
+  | { type: 'land'; pos: Vec2; power?: number }
   | { type: 'attack'; pos: Vec2; kind: string }
   | { type: 'special'; pos: Vec2; fighterId: string }
   | { type: 'ultimate'; pos: Vec2; fighterId: string }
   | { type: 'knockout'; pos: Vec2; victimId: string }
   | { type: 'shield'; pos: Vec2 }
+  | { type: 'syphon'; pos: Vec2; amount: number; fighterId: string }
   | { type: 'wave'; wave: number; score: number };
 
 export type GameEventHandler = (e: GameEvent) => void;

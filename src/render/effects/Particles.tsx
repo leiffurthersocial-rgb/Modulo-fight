@@ -9,8 +9,23 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { EventBus } from '@/systems/simulation/events';
+import { getFighter } from '@/fighters/fighterData';
 
 const DEFAULT_MAX_PARTICLES = 260;
+
+// Cache of attacker id → accent colour as an [r,g,b] triple, so hit sparks are
+// tinted by whoever landed the blow (each fighter's signature colour).
+const accentCache = new Map<string, [number, number, number]>();
+function accentRgb(id: string): [number, number, number] {
+  let rgb = accentCache.get(id);
+  if (!rgb) {
+    const c = new THREE.Color(getFighter(id).appearance.accent);
+    // Brighten slightly so sparks pop against the bloom.
+    rgb = [Math.min(1, c.r + 0.25), Math.min(1, c.g + 0.25), Math.min(1, c.b + 0.25)];
+    accentCache.set(id, rgb);
+  }
+  return rgb;
+}
 
 interface Particle {
   active: boolean;
@@ -94,28 +109,70 @@ export function Particles({ events, maxParticles = DEFAULT_MAX_PARTICLES }: Prop
     [pool],
   );
 
+  // Dust puff: low, wide, sideways sparks that settle — used for landings.
+  const spawnDust = useMemo(
+    () =>
+      (x: number, y: number, count: number): void => {
+        for (let i = 0; i < count; i++) {
+          const p = pool[cursor.current];
+          cursor.current = (cursor.current + 1) % MAX_PARTICLES;
+          const dir = Math.random() < 0.5 ? -1 : 1;
+          const spd = 1.5 + Math.random() * 3;
+          p.active = true;
+          p.x = x + (Math.random() - 0.5) * 0.5;
+          p.y = y;
+          p.vx = dir * spd;
+          p.vy = 0.5 + Math.random() * 1.5;
+          p.life = 0;
+          p.maxLife = 0.3 + Math.random() * 0.25;
+          p.size = 0.12 + Math.random() * 0.12;
+          const g = 0.72 + Math.random() * 0.12;
+          p.r = g;
+          p.g = g;
+          p.b = g * 0.9;
+        }
+      },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pool],
+  );
+
   useEffect(() => {
     const unsub = events.subscribe((e) => {
       switch (e.type) {
-        case 'hit':
-          spawn(e.pos.x, e.pos.y, Math.min(6 + Math.floor(e.power), 20), e.power * 0.4 + 3, [1, 0.85, 0.4], 0.16, 0.5);
+        case 'hit': {
+          // White-hot core spark plus a burst tinted with the attacker's accent.
+          spawn(e.pos.x, e.pos.y, Math.min(4 + Math.floor(e.power * 0.5), 12), e.power * 0.45 + 3, [1, 0.96, 0.8], 0.15, 0.4);
+          spawn(e.pos.x, e.pos.y, Math.min(6 + Math.floor(e.power), 20), e.power * 0.4 + 3, accentRgb(e.attackerId), 0.16, 0.5);
           break;
+        }
         case 'knockout':
           spawn(e.pos.x, e.pos.y, 40, 14, [1, 0.4, 0.4], 0.22, 0.9);
           break;
         case 'special':
-          spawn(e.pos.x, e.pos.y, 16, 8, [0.5, 0.8, 1], 0.18, 0.6);
+          spawn(e.pos.x, e.pos.y, 16, 8, accentRgb(e.fighterId), 0.18, 0.6);
           break;
         case 'ultimate':
-          spawn(e.pos.x, e.pos.y, 60, 12, [1, 0.9, 0.3], 0.26, 1);
+          // Double burst: gold core + the fighter's accent halo.
+          spawn(e.pos.x, e.pos.y, 40, 13, [1, 0.9, 0.3], 0.28, 1);
+          spawn(e.pos.x, e.pos.y, 30, 9, accentRgb(e.fighterId), 0.22, 1.1);
           break;
         case 'shield':
           spawn(e.pos.x, e.pos.y, 8, 4, [0.6, 0.9, 1], 0.14, 0.4);
           break;
+        case 'syphon':
+          // Gentle accent sparkles around the drainer — life flowing back in.
+          spawn(e.pos.x, e.pos.y + 0.5, 12, 3, accentRgb(e.fighterId), 0.13, 0.6);
+          break;
+        case 'land': {
+          // Low, wide dust kicked sideways along the ground.
+          const n = Math.min(4 + Math.floor((e.power ?? 0) * 0.4), 14);
+          spawnDust(e.pos.x, e.pos.y, n);
+          break;
+        }
       }
     });
     return unsub;
-  }, [events, spawn]);
+  }, [events, spawn, spawnDust]);
 
   useFrame((_, dt) => {
     const mesh = meshRef.current;

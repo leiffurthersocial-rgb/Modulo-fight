@@ -38,7 +38,9 @@ export function integrateMovement(
     const runSpeedBonus = f.config.passive === 'runSpeed' ? 1.12 : 1;
     const sprint = input.sprint ? SPRINT_MULTIPLIER : 1;
     const targetVx = input.moveX * stats.speed * runSpeedBonus * sprint;
-    const accel = f.grounded ? GROUND_ACCEL : AIR_ACCEL;
+    // Air control varies per fighter (acrobats steer hard, heavies drift).
+    const airAccel = AIR_ACCEL * (stats.airControl ?? 1);
+    const accel = f.grounded ? GROUND_ACCEL : airAccel;
 
     if (input.moveX !== 0) {
       f.vel.x = moveToward(f.vel.x, targetVx, accel * dt);
@@ -78,7 +80,8 @@ export function integrateMovement(
 
   // --- Gravity ------------------------------------------------------------
   if (!f.grounded) {
-    f.vel.y -= GRAVITY * debug.gravityScale * dt;
+    // Per-fighter gravity: floaties hang (better air game), heavies fast-fall.
+    f.vel.y -= GRAVITY * (stats.gravityMul ?? 1) * debug.gravityScale * dt;
     if (f.vel.y < -MAX_FALL_SPEED) f.vel.y = -MAX_FALL_SPEED;
   }
 }
@@ -95,7 +98,9 @@ export function integratePosition(
   f.pos.y += f.vel.y * dt;
 
   const wasGrounded = f.grounded;
+  const impactSpeed = -f.vel.y; // downward speed this step (positive while falling)
   f.grounded = false;
+  f.landSpeed = 0;
 
   const feetPrev = prevY - FIGHTER_HALF_HEIGHT;
 
@@ -123,6 +128,7 @@ export function integratePosition(
       f.pos.y = top + FIGHTER_HALF_HEIGHT;
       f.vel.y = 0;
       f.grounded = true;
+      if (!wasGrounded) f.landSpeed = Math.max(0, impactSpeed);
       break;
     }
   }
@@ -147,6 +153,49 @@ export function nearestGround(arena: ArenaConfig, x: number): Platform | null {
     }
   }
   return best;
+}
+
+/**
+ * The specific platform a grounded fighter's feet are actually resting on —
+ * matched by height, not just "the tallest platform under this x". Stages
+ * like Sky Temple stack a floating platform directly above the main one, so
+ * `nearestGround` (topmost-by-x) can return the wrong platform entirely for
+ * a fighter standing on the lower one; this is what edge-aware ultimate
+ * movement (e.g. a ground-locked dash) needs instead.
+ */
+export function standingPlatform(arena: ArenaConfig, feetY: number, x: number): Platform | null {
+  for (const p of arena.platforms) {
+    const top = p.y + p.height / 2;
+    if (Math.abs(feetY - top) > 0.05) continue;
+    const left = p.x - p.width / 2;
+    const right = p.x + p.width / 2;
+    if (x >= left && x <= right) return p;
+  }
+  return null;
+}
+
+/**
+ * Ledge safety for grounded burst moves (dash, dodge, surge ultimates): caps a
+ * fighter's horizontal velocity for this step so they can't slide past the
+ * edge of the platform they're standing on. Returns the (possibly reduced)
+ * velocity; if they're airborne or off any platform, the input is returned
+ * unchanged so aerial control and intentional off-stage movement are untouched.
+ */
+export function groundEdgeClampVx(
+  f: FighterRuntime,
+  arena: ArenaConfig,
+  vx: number,
+  dt: number,
+): number {
+  if (!f.grounded) return vx;
+  const plat = standingPlatform(arena, f.pos.y - FIGHTER_HALF_HEIGHT, f.pos.x);
+  if (!plat) return vx;
+  const margin = FIGHTER_HALF_WIDTH + 0.1;
+  const rightEdge = plat.x + plat.width / 2 - margin;
+  const leftEdge = plat.x - plat.width / 2 + margin;
+  if (vx > 0) return Math.min(vx, Math.max(0, rightEdge - f.pos.x) / dt);
+  if (vx < 0) return Math.max(vx, -Math.max(0, f.pos.x - leftEdge) / dt);
+  return vx;
 }
 
 /** Returns true if the fighter has crossed a blast zone this step. */

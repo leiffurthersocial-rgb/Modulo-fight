@@ -21,6 +21,10 @@ export interface DebugFlags {
   playerInvincible: boolean;
   /** Player's ultimate meter stays full. */
   infiniteUlt: boolean;
+  /** Player's special/ultimate cooldowns recover instantly. */
+  noCooldowns: boolean;
+  /** Player's shield never drains. */
+  infiniteShield: boolean;
   /** All bots stop acting (frozen input). */
   freezeBots: boolean;
   /** Everyone can jump forever (recovery testing). */
@@ -39,6 +43,8 @@ export const debug: DebugFlags = {
   knockbackScale: 1,
   playerInvincible: false,
   infiniteUlt: false,
+  noCooldowns: false,
+  infiniteShield: false,
   freezeBots: false,
   unlimitedJumps: false,
   showHitboxes: false,

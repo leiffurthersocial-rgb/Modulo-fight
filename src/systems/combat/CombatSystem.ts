@@ -11,16 +11,30 @@ import {
   COMBO_RESET_TIME,
   HITSTUN_PER_KNOCKBACK,
   KNOCKBACK_DAMAGE_SCALE,
+  VICTIM_BODY_RADIUS,
 } from '@/core/constants';
-import { clamp, dist } from '@/core/math';
+import { clamp, segmentPointDistance } from '@/core/math';
 import { debug } from '@/core/debug';
 import type { EventBus } from '@/systems/simulation/events';
+import type { AttackData as _AttackData } from '@/core/types';
 import {
   effectiveReach,
   isBusy,
   type ActiveAttack,
   type FighterRuntime,
 } from '@/systems/simulation/FighterRuntime';
+
+/**
+ * True when the victim is protected from this hit by invulnerability. A move
+ * flagged `piercesInvuln` cuts through *dodge* invulnerability (short windows,
+ * ≤ 0.4s) so it can't be rolled through — but never through the long spawn
+ * invulnerability, so respawns stay safe.
+ */
+function isInvulnerableTo(victim: FighterRuntime, attack: _AttackData): boolean {
+  if (victim.invuln <= 0) return false;
+  if (attack.piercesInvuln && victim.invuln <= 0.4) return false;
+  return true;
+}
 
 /** Attempt to begin an attack of the given kind. Returns true if it started. */
 export function tryStartAttack(f: FighterRuntime, kind: AttackKind): boolean {
@@ -30,7 +44,7 @@ export function tryStartAttack(f: FighterRuntime, kind: AttackKind): boolean {
   if (cd > 0) return false;
   if (kind === 'ultimate' && f.ultCharge < 1) return false;
 
-  f.attack = { data, elapsed: 0, hitIds: new Set() };
+  f.attack = { data, elapsed: 0, hitLog: new Map(), fired: 0 };
   f.state = kind;
   f.stateTime = 0;
   if (data.cooldown > 0) f.cooldowns[data.name] = data.cooldown;
@@ -89,27 +103,68 @@ export function resolveAttackHits(
   attacker: FighterRuntime,
   others: FighterRuntime[],
   events: EventBus,
+  dt: number,
 ): void {
   const attack = attacker.attack;
   if (!attack || !attackHitboxActive(attack)) return;
 
-  const reach = effectiveReach(attacker, attack.data);
-  const hbx = attacker.pos.x + attacker.facing * reach;
-  const hby = attacker.pos.y + attack.data.yOffset;
+  // Vacuum ultimates (Leif's Hurricane Combo) drag nearby foes into the
+  // whirlwind while the hitbox is live, so the multi-hit actually traps.
+  if (attack.data.vacuum) {
+    for (const victim of others) {
+      if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
+      if (victim.invuln > 0 || victim.immovable) continue;
+      const dx = attacker.pos.x - victim.pos.x;
+      if (Math.abs(dx) < 5 && Math.abs(dx) > 0.3) {
+        victim.vel.x += Math.sign(dx) * 26 * dt;
+      }
+    }
+  }
 
+  // Seismic ultimates (Leonidas's Earthquake) strike every grounded opponent
+  // anywhere on the stage — the only escape is to be airborne.
+  if (attack.data.quake) {
+    for (const victim of others) {
+      if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
+      if (attack.hitLog.has(victim.config.id)) continue;
+      if (isInvulnerableTo(victim, attack.data) || !victim.grounded) continue;
+      attack.hitLog.set(victim.config.id, attack.elapsed);
+      applyHit(attacker, victim, attack.data, events);
+    }
+    return; // The quake IS the hitbox — skip the melee capsule.
+  }
+
+  const reach = effectiveReach(attacker, attack.data);
+  // Swept-capsule hitbox: a segment from just in front of the torso out to the
+  // attack's reach tip, thickened by the move's radius. Testing the whole
+  // segment (not one sampled point) means a move connects along its entire
+  // extent, so attacks that visually clip the opponent reliably register.
+  const yc = attacker.pos.y + attack.data.yOffset;
+  const origin = { x: attacker.pos.x + attacker.facing * 0.2, y: yc };
+  const tip = { x: attacker.pos.x + attacker.facing * reach, y: yc };
+
+  const interval = attack.data.hitInterval;
   for (const victim of others) {
     if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
-    if (attack.hitIds.has(victim.config.id)) continue;
-    if (victim.invuln > 0) continue;
+    // Multi-hit moves re-strike the same target every `hitInterval`; single-hit
+    // moves connect at most once per swing.
+    const last = attack.hitLog.get(victim.config.id);
+    if (last !== undefined) {
+      if (interval === undefined) continue;
+      if (attack.elapsed - last < interval) continue;
+    }
+    if (isInvulnerableTo(victim, attack.data)) continue;
 
-    const d = dist({ x: hbx, y: hby }, victim.pos);
-    if (d > attack.data.radius + 0.5) continue;
+    const d = segmentPointDistance(victim.pos, origin, tip);
+    if (d > attack.data.radius + VICTIM_BODY_RADIUS) continue;
 
-    attack.hitIds.add(victim.config.id);
+    attack.hitLog.set(victim.config.id, attack.elapsed);
 
     // Shielding absorbs the hit but drains the shield.
     if (victim.shielding && victim.shield > 0) {
-      victim.shield = clamp(victim.shield - attack.data.damage * 0.05, 0, 1);
+      if (!(debug.infiniteShield && victim.isPlayer)) {
+        victim.shield = clamp(victim.shield - attack.data.damage * 0.05, 0, 1);
+      }
       events.emit({ type: 'shield', pos: { ...victim.pos } });
       if (victim.shield > 0) continue;
     }
@@ -118,8 +173,8 @@ export function resolveAttackHits(
   }
 }
 
-/** Apply a confirmed hit from attacker to victim. */
-function applyHit(
+/** Apply a confirmed hit from attacker to victim (also used by projectiles). */
+export function applyHit(
   attacker: FighterRuntime,
   victim: FighterRuntime,
   attack: AttackData,
@@ -132,12 +187,31 @@ function applyHit(
   if (attacker.config.passive === 'comboGrowth') {
     damage *= 1 + Math.min(attacker.comboCount, 8) * 0.05;
   }
+  // Erim: counter-hit — striking a foe who is mid-attack rewards patience with
+  // bonus damage (and bonus knockback below).
+  const counterHit = attacker.config.passive === 'counterForce' && !!victim.attack;
+  if (counterHit) damage *= 1.2;
 
   victim.damage = clamp(victim.damage + damage, 0, 999);
   // Lifetime stats for post-match balance data — never reset by respawn.
   attacker.totalDamageDealt += damage;
   victim.totalDamageTaken += damage;
   victim.lastHitBy = attacker.config.id;
+
+  // Syphon: the move drains a fraction of the damage dealt, reducing the
+  // attacker's own %. Capped per hit so it's sustain, never a full reset.
+  if (attack.syphon && attacker.damage > 0) {
+    const heal = Math.min(damage * attack.syphon, 8, attacker.damage);
+    if (heal > 0.1) {
+      attacker.damage = clamp(attacker.damage - heal, 0, 999);
+      events.emit({
+        type: 'syphon',
+        pos: { ...attacker.pos },
+        amount: heal,
+        fighterId: attacker.config.id,
+      });
+    }
+  }
 
   // --- Knockback ---------------------------------------------------------
   let kb = knockbackMagnitude(attack, victim);
@@ -147,8 +221,8 @@ function applyHit(
     kb *= 1.18;
   }
   // Erim: counter-hitting a fighter who is mid-attack adds knockback.
-  if (attacker.config.passive === 'counterForce' && victim.attack) {
-    kb *= 1.25;
+  if (counterHit) {
+    kb *= 1.32;
   }
   // Debug: global knockback scaling.
   kb *= debug.knockbackScale;
@@ -167,7 +241,28 @@ function applyHit(
     });
     attacker.comboCount += 1;
     attacker.comboTimer = COMBO_RESET_TIME;
-    attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012, 0, 1);
+    attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012 * (attacker.config.ultChargeRate ?? 1), 0, 1);
+    return;
+  }
+
+  // Curse hits (Jovan's Glorious Strike): full damage, zero launch. The
+  // victim keeps their footing — and every point of that damage.
+  if (attack.noKnockback) {
+    victim.hitstun = Math.max(victim.hitstun, 0.45);
+    victim.state = 'hit';
+    victim.stateTime = 0;
+    victim.attack = null;
+    attacker.comboCount += 1;
+    attacker.comboTimer = COMBO_RESET_TIME;
+    attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012 * (attacker.config.ultChargeRate ?? 1), 0, 1);
+    victim.ultCharge = clamp(victim.ultCharge + damage * 0.006, 0, 1);
+    events.emit({
+      type: 'hit',
+      pos: { ...victim.pos },
+      power: kb,
+      attackerId: attacker.config.id,
+      victimId: victim.config.id,
+    });
     return;
   }
 
@@ -190,7 +285,7 @@ function applyHit(
   // --- Combo tracking (attacker builds combos, feeds ult charge) ---------
   attacker.comboCount += 1;
   attacker.comboTimer = COMBO_RESET_TIME;
-  attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012, 0, 1);
+  attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012 * (attacker.config.ultChargeRate ?? 1), 0, 1);
   // The victim also charges a little ult meter from taking damage (comeback).
   victim.ultCharge = clamp(victim.ultCharge + damage * 0.006, 0, 1);
 

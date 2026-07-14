@@ -20,8 +20,14 @@ export interface ActiveAttack {
   data: AttackData;
   /** Elapsed time since the attack started. */
   elapsed: number;
-  /** Ids already hit by this swing (prevents multi-hits per active window). */
-  hitIds: Set<string>;
+  /**
+   * Per-victim log of the `elapsed` time of the last connect. A single-hit
+   * move only checks presence (hit once, never again); a multi-hit move
+   * (`hitInterval` set) re-hits once enough time has passed.
+   */
+  hitLog: Map<string, number>;
+  /** Projectile ultimates: how many bolts have been fired so far. */
+  fired: number;
 }
 
 export interface FighterRuntime {
@@ -73,6 +79,9 @@ export interface FighterRuntime {
   /** Cosmetic: last-hit flash timer for the renderer. */
   hitFlash: number;
 
+  /** Downward speed at the moment of the most recent landing (0 otherwise). */
+  landSpeed: number;
+
   /** Cosmetic: intensity 0..1 for ultimate glow. */
   ultCharge: number;
 
@@ -122,6 +131,7 @@ export function createFighterRuntime(
     respawnTimer: 0,
     wasHitRecently: 0,
     hitFlash: 0,
+    landSpeed: 0,
     ultCharge: 0,
     immovable: false,
     totalDamageDealt: 0,

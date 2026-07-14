@@ -9,10 +9,15 @@ import type { ArenaConfig, Difficulty, FighterConfig, GameMode, Vec2 } from '@/c
 import {
   DASH_DURATION,
   DASH_SPEED,
+  DI_STRENGTH,
   DODGE_DURATION,
   DODGE_INVULN,
   DODGE_SPEED,
   FIXED_DT,
+  HITSTOP_BASE,
+  HITSTOP_KO,
+  HITSTOP_MAX,
+  HITSTOP_PER_POWER,
   MAX_STEPS_PER_FRAME,
   RESPAWN_Y,
   SHIELD_DRAIN,
@@ -28,10 +33,13 @@ import { emptyInput } from '@/systems/input/InputState';
 import { AIController } from '@/systems/ai/AIController';
 import {
   crossedBlastZone,
+  groundEdgeClampVx,
   integrateMovement,
   integratePosition,
 } from '@/systems/physics/PhysicsSystem';
 import {
+  applyHit,
+  attackHitboxActive,
   resolveAttackHits,
   tryStartAttack,
   updateAttack,
@@ -70,6 +78,23 @@ export interface MatchConfig {
 
 export type MatchStatus = 'running' | 'paused' | 'finished';
 
+/** A live projectile (Erim's Laser Barrage). Plain object, pooled by index. */
+export interface Projectile {
+  active: boolean;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  /** Index of the fighter who fired it (credits hits/KOs). */
+  ownerIndex: number;
+  /** Remaining lifetime in seconds. */
+  life: number;
+}
+
+const MAX_PROJECTILES = 12;
+const PROJECTILE_RADIUS = 0.45;
+const PROJECTILE_LIFE = 1.6;
+
 export interface MatchResult {
   winnerIndex: number | null;
   placements: number[]; // fighter indices best → worst
@@ -90,6 +115,21 @@ export class Simulation {
   /** Survive mode: opponents defeated so far (the score) and current wave. */
   score = 0;
   wave = 1;
+
+  /** Remaining impact-freeze time; while > 0 the whole match is paused. */
+  hitStop = 0;
+
+  /** Fixed pool of projectiles (Laser Barrage bolts). Renderer reads directly. */
+  readonly projectiles: Projectile[] = Array.from({ length: MAX_PROJECTILES }, () => ({
+    active: false,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    ownerIndex: 0,
+    life: 0,
+  }));
+  private projectileCursor = 0;
 
   private ai = new AIController();
   private accumulator = 0;
@@ -120,6 +160,17 @@ export class Simulation {
         ),
       );
     });
+
+    // Impact freeze-frames: heavier hits (and KOs) pause the match briefly so
+    // strikes land with weight. Driven off the same events the renderer uses.
+    this.events.subscribe((e) => {
+      if (e.type === 'hit') {
+        const s = Math.min(HITSTOP_BASE + e.power * HITSTOP_PER_POWER, HITSTOP_MAX);
+        if (s > this.hitStop) this.hitStop = s;
+      } else if (e.type === 'knockout' || e.type === 'ultimate') {
+        if (HITSTOP_KO > this.hitStop) this.hitStop = HITSTOP_KO;
+      }
+    });
   }
 
   pause(): void {
@@ -133,9 +184,17 @@ export class Simulation {
   /** Advance the simulation by real elapsed seconds using fixed steps. */
   advance(realDt: number): void {
     if (this.status !== 'running') return;
+    const scaled = realDt * debug.timeScale;
+    // Impact freeze: consume real time into the hitstop timer and skip stepping
+    // while it lasts. The renderer keeps drawing (particles, shake), so the
+    // frozen instant reads as a punchy "hit pause".
+    if (this.hitStop > 0) {
+      this.hitStop -= scaled;
+      if (this.hitStop > 0) return;
+    }
     // Clamp to avoid huge catch-up after a tab stall; debug time-scale lets us
     // slow-mo or fast-forward the whole match.
-    this.accumulator += Math.min(realDt * debug.timeScale, 0.25);
+    this.accumulator += Math.min(scaled, 0.25);
     let steps = 0;
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
       this.step(FIXED_DT);
@@ -169,8 +228,11 @@ export class Simulation {
 
     // 3. Resolve combat after everyone has moved (order-independent hits).
     for (const f of this.fighters) {
-      resolveAttackHits(f, this.fighters, this.events);
+      resolveAttackHits(f, this.fighters, this.events, dt);
     }
+
+    // 3b. Projectiles: fire pending bolts, then fly + collide.
+    this.updateProjectiles(dt);
 
     // 4. Blast zones, stocks and respawns.
     for (const f of this.fighters) this.handleBoundaries(f, dt);
@@ -195,6 +257,7 @@ export class Simulation {
     if (f.isPlayer) {
       if (debug.infiniteUlt) f.ultCharge = 1;
       if (debug.playerInvincible) f.invuln = Math.max(f.invuln, 0.2);
+      if (debug.noCooldowns) for (const k of Object.keys(f.cooldowns)) f.cooldowns[k] = 0;
     }
 
     // --- Countdown timers ---------------------------------------------------
@@ -211,7 +274,8 @@ export class Simulation {
     updateAttack(f, dt);
 
     // Slow passive ultimate charge so ults are always eventually reachable.
-    f.ultCharge = clamp(f.ultCharge + dt * 0.018, 0, 1);
+    // Per-fighter rate: strong ults charge slower, modest ults faster.
+    f.ultCharge = clamp(f.ultCharge + dt * 0.018 * (f.config.ultChargeRate ?? 1), 0, 1);
 
     if (f.respawnTimer > 0) {
       f.respawnTimer = Math.max(0, f.respawnTimer - dt);
@@ -232,18 +296,55 @@ export class Simulation {
             this.events.emit({ type: 'ultimate', pos: { ...f.pos }, fighterId: f.config.id });
         } else if (input.special) {
           if (tryStartAttack(f, 'special')) this.events.emit({ type: 'special', pos: { ...f.pos }, fighterId: f.config.id });
-        } else if (input.heavy) tryStartAttack(f, 'heavy');
-        else if (input.light) tryStartAttack(f, 'light');
+        } else if (input.heavy) {
+          if (tryStartAttack(f, 'heavy')) this.events.emit({ type: 'attack', pos: { ...f.pos }, kind: 'heavy' });
+        } else if (input.light) {
+          if (tryStartAttack(f, 'light')) this.events.emit({ type: 'attack', pos: { ...f.pos }, kind: 'light' });
+        }
       }
     } else if (f.shielding) {
       // Drop shield if we got hit / became busy.
       f.shielding = false;
     }
 
+    // --- Signature ultimate movement -----------------------------------------
+    // Surge (Golden Rush): the attacker drives forward while the hitbox is live,
+    // but only across solid ground — never off a ledge (the clamp below keeps
+    // him on his platform for the whole move). Rise (Sky Storm): spirals upward.
+    if (f.attack && attackHitboxActive(f.attack)) {
+      if (f.attack.data.surge && f.grounded) f.vel.x = f.facing * 15;
+      if (f.attack.data.riseSelf) {
+        f.vel.y = Math.max(f.vel.y, 9);
+        f.grounded = false;
+      }
+    }
+
+    // --- Directional influence ---------------------------------------------
+    // Airborne hitstun victims may nudge their launch trajectory by holding a
+    // direction — a small window of agency that rewards good survival DI.
+    if (inHitstun && !f.grounded && input.moveX !== 0) {
+      f.vel.x += input.moveX * DI_STRENGTH * dt;
+    }
+
     // --- Movement integration ----------------------------------------------
     const moveInput = this.effectiveMoveInput(f, input);
     integrateMovement(f, moveInput, dt, canAct && f.actionTimer <= 0);
+    // Ledge safety: a grounded burst move (dash, dodge, or a surge ultimate)
+    // skids to a stop at the platform edge instead of sliding into the blast
+    // zone. This covers the *entire* move — including an ultimate's startup,
+    // where a committal forward lunge could otherwise carry the fighter off
+    // before the active frames even begin.
+    const bursting =
+      f.state === 'dash' || f.state === 'dodge' || (f.attack?.data.surge ?? false);
+    if (bursting && f.grounded) {
+      f.vel.x = groundEdgeClampVx(f, this.config.arena, f.vel.x, dt);
+    }
     integratePosition(f, moveInput, this.config.arena, dt);
+
+    // Landing puff — only for meaningful drops, so walking off ledges is quiet.
+    if (f.landSpeed > 7) {
+      this.events.emit({ type: 'land', pos: { x: f.pos.x, y: f.pos.y - 0.85 }, power: f.landSpeed });
+    }
 
     // --- Cosmetic state resolution -----------------------------------------
     this.resolveState(f, input);
@@ -268,7 +369,8 @@ export class Simulation {
   private handleShield(f: FighterRuntime, input: InputFrame, dt: number): void {
     if (input.shield && f.grounded && f.shield > 0.05) {
       f.shielding = true;
-      f.shield = clamp(f.shield - SHIELD_DRAIN * dt, 0, SHIELD_MAX);
+      const drainImmune = debug.infiniteShield && f.isPlayer;
+      if (!drainImmune) f.shield = clamp(f.shield - SHIELD_DRAIN * dt, 0, SHIELD_MAX);
       f.state = 'shield';
       f.vel.x = 0;
     } else {
@@ -355,6 +457,61 @@ export class Simulation {
     f.invuln = SPAWN_INVULN;
     f.respawnTimer = 0.4;
     f.state = 'fall';
+  }
+
+  /** Fire pending Laser Barrage bolts, then advance and collide all of them. */
+  private updateProjectiles(dt: number): void {
+    // Fire: any fighter mid-ultimate with a projectile config emits bolts on
+    // a fixed cadence once startup completes.
+    for (const f of this.fighters) {
+      const atk = f.attack;
+      const cfg = atk?.data.projectiles;
+      if (!atk || !cfg) continue;
+      while (
+        atk.fired < cfg.count &&
+        atk.elapsed >= atk.data.startup + atk.fired * cfg.interval
+      ) {
+        const p = this.projectiles[this.projectileCursor];
+        this.projectileCursor = (this.projectileCursor + 1) % MAX_PROJECTILES;
+        p.active = true;
+        p.x = f.pos.x + f.facing * 0.9;
+        // Slight vertical fan so the volley sweeps a band, not a single line.
+        p.y = f.pos.y + 0.35 + (atk.fired % 3) * 0.35;
+        p.vx = f.facing * cfg.speed;
+        p.vy = 0;
+        p.ownerIndex = f.index;
+        p.life = PROJECTILE_LIFE;
+        atk.fired += 1;
+      }
+    }
+
+    // Fly + collide.
+    const b = this.config.arena.blastZone;
+    for (const p of this.projectiles) {
+      if (!p.active) continue;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+      if (p.life <= 0 || p.x < b.left || p.x > b.right) {
+        p.active = false;
+        continue;
+      }
+      const owner = this.fighters[p.ownerIndex];
+      if (!owner) {
+        p.active = false;
+        continue;
+      }
+      for (const victim of this.fighters) {
+        if (victim === owner || victim.eliminated || victim.respawnTimer > 0) continue;
+        if (victim.invuln > 0) continue;
+        const dx = victim.pos.x - p.x;
+        const dy = victim.pos.y - p.y;
+        if (dx * dx + dy * dy > (PROJECTILE_RADIUS + 0.6) ** 2) continue;
+        applyHit(owner, victim, owner.config.attacks.ultimate, this.events);
+        p.active = false;
+        break;
+      }
+    }
   }
 
   /** Produce input for a practice-mode training dummy. */

@@ -64,12 +64,13 @@ export function Results() {
   if (mode === 'survive') return <SurviveResults />;
 
   const winner = placements[0];
+  const winnerAccent = winner ? getFighter(winner.configId).appearance.accent : undefined;
 
   return (
     <div className="menu">
       <div className="panel" style={{ width: 'min(560px, 94vw)', textAlign: 'center' }}>
         <div className="badge">Match Complete</div>
-        <h2 style={{ fontSize: 34, marginTop: 12 }}>
+        <h2 className="results-winner" style={{ fontSize: 34, marginTop: 12, color: winnerAccent }}>
           {winner ? `${winner.name} Wins!` : 'Draw'}
         </h2>
 
@@ -77,7 +78,11 @@ export function Results() {
           {placements.map((p, i) => {
             const f = getFighter(p.configId);
             return (
-              <div key={p.index} className="result-row">
+              <div
+                key={p.index}
+                className="result-row"
+                style={{ animationDelay: `${120 + i * 90}ms` }}
+              >
                 <span className="result-place">{MEDALS[i] ?? `#${i + 1}`}</span>
                 <span
                   className="fighter-swatch"

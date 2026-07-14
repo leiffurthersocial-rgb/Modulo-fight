@@ -16,6 +16,8 @@ export interface Pose {
   bodyY: number;
   bodyTilt: number;
   bodyRotY: number;
+  /** Forward/backward pitch (X axis) — used for rolls, dives and tumbles. */
+  bodyRotX: number;
   armLeft: number;
   armRight: number;
   legLeft: number;
@@ -34,12 +36,19 @@ export type AttackStyle =
   | 'barrage'
   | 'charge'
   | 'uppercut'
-  | 'lunge';
+  | 'lunge'
+  // Signature ultimate choreographies — one per fighter, matching the move's
+  // name so what happens on screen is what the tooltip promised.
+  | 'rush' // Golden Rush: low, blazing forward flurry
+  | 'hurricane' // Hurricane Combo: multi-revolution vortex
+  | 'royal' // Glorious Strike: stately decree, then one sweeping blow
+  | 'skyward'; // Sky Storm: spiralling ascent
 
 const IDLE: Pose = {
   bodyY: 0,
   bodyTilt: 0,
   bodyRotY: 0,
+  bodyRotX: 0,
   armLeft: 0.1,
   armRight: -0.1,
   legLeft: 0,
@@ -51,10 +60,15 @@ const IDLE: Pose = {
 /** Map a move to an animation style using its name and category. */
 export function deriveAttackStyle(attack: AttackData): AttackStyle {
   const n = attack.name.toLowerCase();
+  // Signature ultimates first — exact choreography for exact names.
+  if (/golden rush/.test(n)) return 'rush';
+  if (/hurricane/.test(n)) return 'hurricane';
+  if (/glorious/.test(n)) return 'royal';
+  if (/sky storm/.test(n)) return 'skyward';
   if (/(kick|dive|kloten|flying|sky)/.test(n)) {
     return /(dive|kloten|sky|meteor)/.test(n) ? 'dive' : 'kick';
   }
-  if (/(spin|roundhouse|cyclone|hurricane)/.test(n)) return 'spin';
+  if (/(spin|roundhouse|cyclone)/.test(n)) return 'spin';
   if (/(slam|sledge|earthquake|ground|meteor)/.test(n)) return 'slam';
   if (/(rapid|punches|barrage|laser)/.test(n)) return 'barrage';
   if (/(charge)/.test(n)) return 'charge';
@@ -116,12 +130,13 @@ function attackPose(style: AttackStyle, p: number, time: number, facing: number)
       o.squash = 1 + 0.12 * wind - 0.22 * strike;
       break;
     case 'dive':
-      // Coil up, then extend into a committed diving kick.
+      // Coil up, then pitch head-first into a committed diving kick.
       o.legRight = -1.4 * wind + 2.0 * strike;
       o.legLeft = -1.4 * wind + 0.5 * strike;
       o.armLeft = -2.0 + 1.2 * strike;
       o.armRight = -2.0 + 1.2 * strike;
       o.bodyTilt = 0.25 + 0.6 * strike;
+      o.bodyRotX = 0.85 * strike;
       o.bodyRotY = facing * strike * Math.PI * 0.45;
       break;
     case 'barrage': {
@@ -141,6 +156,57 @@ function attackPose(style: AttackStyle, p: number, time: number, facing: number)
       o.bodyY = -0.08 * wind;
       o.squash = 1 + 0.1 * wind;
       break;
+    case 'rush': {
+      // Golden Rush: crouched low, torso pitched hard forward, fists a blur —
+      // a fighter turned battering ram.
+      const osc = Math.sin(time * 40);
+      o.bodyTilt = 0.2 * wind + 0.65 * strike;
+      o.bodyY = -0.15 * strike;
+      o.armRight = -1.9 - osc * 0.7;
+      o.armLeft = -1.9 + osc * 0.7;
+      o.legLeft = 0.7 * strike + osc * 0.4;
+      o.legRight = 0.7 * strike - osc * 0.4;
+      o.squash = 1 - 0.08 * strike;
+      break;
+    }
+    case 'hurricane': {
+      // Hurricane Combo: a genuine multi-revolution vortex, one leg flung
+      // out, arms alternating between wide and tucked as it accelerates.
+      const rev = p * p * Math.PI * 7; // accelerating spin
+      o.bodyRotY = facing * rev;
+      const tuck = Math.sin(p * Math.PI); // wide → tucked → wide
+      o.armLeft = 1.9 - tuck * 2.4;
+      o.armRight = -1.9 + tuck * 2.4;
+      o.legRight = -1.3 * tuck;
+      o.legLeft = 0.3 * tuck;
+      o.bodyTilt = 0.25 * tuck;
+      o.bodyY = 0.12 * tuck;
+      break;
+    }
+    case 'royal': {
+      // Glorious Strike: rise tall, one arm raised in decree during the long
+      // wind-up — then a single, sweeping regal blow with a quarter turn.
+      o.squash = 1 + 0.1 * wind - 0.04 * strike;
+      o.bodyY = 0.12 * wind;
+      o.armRight = -3.0 * wind + 2.2 * strike - 0.4 * recover;
+      o.armLeft = 0.4 * wind - 1.2 * strike;
+      o.bodyRotY = facing * (0.15 * wind - Math.PI * 0.3 * strike);
+      o.bodyTilt = -0.12 * wind + 0.3 * strike;
+      o.headTilt = -0.15 * wind;
+      break;
+    }
+    case 'skyward': {
+      // Sky Storm: legs tucked, arms overhead, spiralling upward — the climb
+      // itself comes from the physics (riseSelf), the pose sells the spiral.
+      o.bodyRotY = facing * p * Math.PI * 5;
+      o.armLeft = -2.6 + 0.4 * Math.sin(time * 20);
+      o.armRight = -2.6 - 0.4 * Math.sin(time * 20);
+      o.legLeft = 1.2;
+      o.legRight = 1.0;
+      o.bodyTilt = 0.15;
+      o.squash = 1.06;
+      break;
+    }
     case 'lunge':
     default:
       // A dashing shoulder-forward strike with a wide stance.
@@ -179,12 +245,16 @@ export function computePose(
 
   const p: Pose = { ...IDLE };
   switch (state) {
-    case 'idle':
-      p.bodyY = Math.sin(time * 2.4) * 0.03;
-      p.armLeft = 0.15 + Math.sin(time * 2.4) * 0.05;
-      p.armRight = -0.15 - Math.sin(time * 2.4) * 0.05;
-      p.headTilt = Math.sin(time * 1.6) * 0.04;
+    case 'idle': {
+      // Gentle breathing with a slow, lifelike weight-shift sway.
+      const b = Math.sin(time * 2.4);
+      p.bodyY = b * 0.035;
+      p.armLeft = 0.16 + b * 0.06;
+      p.armRight = -0.16 - b * 0.06;
+      p.headTilt = Math.sin(time * 1.6) * 0.05;
+      p.bodyTilt = Math.sin(time * 1.2) * 0.03;
       break;
+    }
     case 'walk': {
       const s = Math.sin(time * 9) * 0.7;
       p.armLeft = s;
@@ -196,13 +266,16 @@ export function computePose(
       break;
     }
     case 'run': {
-      const s = Math.sin(time * 15) * 1.15;
+      const s = Math.sin(time * 15) * 1.25;
       p.armLeft = s;
       p.armRight = -s;
       p.legLeft = -s;
       p.legRight = s;
-      p.bodyTilt = 0.32;
-      p.bodyY = Math.abs(Math.sin(time * 15)) * 0.11;
+      p.bodyTilt = 0.36;
+      p.headTilt = 0.08;
+      p.bodyY = Math.abs(Math.sin(time * 15)) * 0.12;
+      // Shoulders counter-rotate against the stride for a natural gait.
+      p.bodyRotY = Math.sin(time * 15) * 0.14;
       break;
     }
     case 'jump':
@@ -240,40 +313,63 @@ export function computePose(
       p.legRight = 0.6;
       break;
     case 'dodge':
-      p.squash = 0.9;
-      p.bodyRotY = time * 20;
-      p.armLeft = 1;
-      p.armRight = 1;
+      // A committed forward roll: tuck tight and somersault once.
+      p.squash = 0.72;
+      p.bodyY = -0.18;
+      p.bodyRotX = Math.min(time * 17.5, Math.PI * 2);
+      p.armLeft = -1.2;
+      p.armRight = -1.2;
+      p.legLeft = 1.1;
+      p.legRight = 1.1;
+      p.headTilt = 0.3;
       break;
     case 'shield':
-      p.armLeft = -0.9;
-      p.armRight = -0.9;
-      p.bodyY = -0.05;
+      // Guarded cower: arms crossed high, crouched and braced.
+      p.armLeft = -1.1;
+      p.armRight = -1.1;
+      p.bodyY = -0.1;
+      p.squash = 0.92;
+      p.bodyTilt = 0.1;
+      p.headTilt = -0.12;
       break;
     case 'hit':
-      p.bodyTilt = -0.4;
-      p.armLeft = -1 + Math.sin(time * 30) * 0.3;
-      p.armRight = -1 - Math.sin(time * 30) * 0.3;
-      p.headTilt = -0.3;
+      p.bodyTilt = -0.5;
+      p.armLeft = -1.1 + Math.sin(time * 34) * 0.35;
+      p.armRight = -1.1 - Math.sin(time * 34) * 0.35;
+      p.headTilt = -0.36;
+      p.squash = 0.96;
       break;
     case 'knockback':
-      p.bodyRotY = time * 10;
-      p.bodyTilt = -0.6;
-      p.armLeft = -1.6;
-      p.armRight = -1.6;
-      p.legLeft = -0.8;
-      p.legRight = -0.8;
+      // A fast, flailing tumble that sells being launched.
+      p.bodyRotY = time * 13;
+      p.bodyRotX = Math.sin(time * 9) * 0.45;
+      p.bodyTilt = -0.7;
+      p.armLeft = -1.8 + Math.sin(time * 24) * 0.45;
+      p.armRight = -1.8 - Math.sin(time * 24) * 0.45;
+      p.legLeft = -0.9 + Math.sin(time * 20) * 0.3;
+      p.legRight = -0.6 - Math.sin(time * 20) * 0.3;
       break;
-    case 'victory':
-      p.armLeft = -2.4;
-      p.armRight = -2.4;
-      p.bodyY = Math.abs(Math.sin(time * 4)) * 0.15;
+    case 'victory': {
+      // Alternating fist pumps with a bounce — a real celebration.
+      const beat = Math.sin(time * 6);
+      p.armLeft = -2.2 + Math.max(0, beat) * 0.7;
+      p.armRight = -2.2 + Math.max(0, -beat) * 0.7;
+      p.bodyY = Math.abs(Math.sin(time * 6)) * 0.18;
+      p.bodyRotY = Math.sin(time * 3) * 0.2;
+      p.headTilt = Math.sin(time * 6) * 0.08;
       break;
+    }
     case 'defeat':
-      p.bodyTilt = 0.9;
-      p.headTilt = 0.4;
-      p.armLeft = 0.3;
-      p.armRight = 0.3;
+      // Slumped kneel: sunk low, head hung, arms limp.
+      p.bodyY = -0.3;
+      p.squash = 0.9;
+      p.legLeft = 1.3;
+      p.legRight = 1.3;
+      p.bodyTilt = 0.35;
+      p.bodyRotX = 0.25;
+      p.headTilt = 0.5;
+      p.armLeft = 0.25;
+      p.armRight = 0.25;
       break;
   }
   void speed;

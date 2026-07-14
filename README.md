@@ -9,24 +9,54 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
 
 ## Features
 
-- **8 unique fighters** — each with distinct stats, a passive, a special and an
-  ultimate (Robin, Leif, Jovan, Leonidas, Erim, Till, Lenni, Tusya).
+- **8 unique fighters** — each with distinct stats, a passive, a special, an
+  ultimate, a signature silhouette (capes, gloves, pauldrons, tech packs) _and
+  a distinct aerial identity_ (floaty acrobats, nimble speedsters, brick-like
+  heavies) driven by per-fighter air control and gravity. Erim's special,
+  Syphon Pulse, drains a capped fraction of the damage he deals back into his
+  own percentage — a sustain tool, not a reset (Robin, Leif, Jovan, Leonidas,
+  Erim, Till, Lenni, Tusya).
 - **Percentage-based combat** — no health bars. Damage grows knockback; win by
-  ring-out. Double jumps, air attacks, dashing, dodging, shielding, hitstun and
-  combos.
+  ring-out. Double jumps, air attacks, dashing, dodging, shielding, hitstun,
+  multi-hit flurries and combos.
+- **Punchy game-feel** — swept-capsule hitboxes so attacks connect along their
+  whole arc, impact freeze-frames (hitstop) scaled by power, directional
+  influence to survive knockback, accent-tinted hit sparks, shockwave impact
+  rings, landing dust, motion streaks, shield domes and a live combo counter.
+- **Readable attacks** — every strike draws a visible swing arc at its real
+  hitbox; ultimates telegraph with a converging ground ring, set the fighter
+  ablaze in their accent colour, blast an outward shock ring and flash the
+  screen — you can't miss one, even zoomed out.
+- **Signature ultimates** — every ultimate has a unique mechanic that matches
+  its name and choreography: Robin's Golden Rush surges across the stage in a
+  flurry, Leif's Hurricane Combo vacuums foes into a spinning vortex, Jovan's
+  Glorious Strike curses its victim with +100% damage but no launch,
+  Leonidas's Earthquake erupts every grounded opponent stage-wide, Erim's
+  Laser Barrage fires a volley of real projectiles, Till's Sky Storm spirals
+  upward carrying anyone he clips, Lenni's Kloten Kick is a leaping shockwave
+  dive, and Tusya's Meteor Smash spikes foes into the ground.
 - **Dynamic arena camera** — Smash-style auto-zoom that always keeps every
   fighter framed, with cinematic smoothing and impact shake.
 - **Human-like AI** — four difficulty tiers (Easy → Insane) that approach,
   space, dodge, combo, recover from off-stage, use specials/ultimates and switch
   targets.
-- **Game modes** — Practice, 1v1, 4-Player FFA, 8-Player FFA.
-- **Eight themed arenas** — Sky Temple, Volcano, Cyber Arena, Forest, Castle,
-  Snow Mountain, Space Station and Construction Site — each with its own layout,
-  colours, fog and decoration set (lava, neon grids, trees, snowfall, stars…).
+- **Game modes** — 1v1 Versus, endless Survive, and Practice (see
+  `docs/NEW_MODES.md` for planned additions).
+- **Eight richly decorated arenas** — Sky Temple (flickering braziers), Volcano
+  (glowing crater mouths, magma fissures, rising smoke), Cyber Arena (falling
+  data-rain, rotating holograms), Forest (drifting leaves, toadstools), Castle
+  (candle-lit windows, a full gate-keep), Snow Mountain (waving aurora, a
+  snowman), Space Station (nebula glow, a blinking satellite, shooting stars)
+  and Construction Site (a working tower crane, striped hazard barriers).
 - **Modern voxel art** — stylized voxel humans with expressive faces, soft
-  shadows, ambient light, bloom, fog and drifting clouds.
+  shadows, ambient light, bloom, fog, drifting clouds and per-fighter costume
+  pieces (capes, gloves, pauldrons, backpacks, pendants).
 - **Complete audio system** — procedurally synthesised music and SFX behind a
   clean interface, ready to swap for recorded samples.
+- **Deep settings & debug tooling** — camera zoom, particle density, and
+  independent toggles for screen flash, battle callouts, the combo counter and
+  speed streaks; a reorganised debug menu adds No Cooldowns and Infinite
+  Shield cheats alongside live simulation tuning.
 
 ## Controls
 

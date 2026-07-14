@@ -44,7 +44,7 @@ export type AttackKind = 'light' | 'heavy' | 'special' | 'ultimate';
 export type Difficulty = 'human' | 'easy' | 'normal' | 'hard' | 'insane';
 
 /** Supported game modes. */
-export type GameMode = 'practice' | '1v1' | 'ffa4' | 'ffa8' | 'survive';
+export type GameMode = 'practice' | '1v1' | 'survive';
 
 /** Top-level app screens. */
 export type Screen =
@@ -70,6 +70,17 @@ export interface FighterStats {
   jumpHeight: number;
   /** Additional knockback resistance (0–1, subtracted from taken knockback). */
   knockbackResist: number;
+  /**
+   * Air-manoeuvrability multiplier (1 = default). Acrobats and speedsters steer
+   * harder in the air; heavies drift like bricks. Gives each fighter a distinct
+   * aerial feel beyond raw stats.
+   */
+  airControl?: number;
+  /**
+   * Gravity multiplier (1 = default). <1 = floaty (hangs in the air, better air
+   * game, but juggled longer); >1 = heavy fast-faller (grounded, poor recovery).
+   */
+  gravityMul?: number;
 }
 
 /** Frame data + hitbox description for a single attack. */
@@ -102,6 +113,49 @@ export interface AttackData {
   hitstun: number;
   /** Cooldown before the move can be used again (specials/ultimates). */
   cooldown: number;
+  /**
+   * If set, the move is a multi-hit: the same target can be struck again every
+   * `hitInterval` seconds while the hitbox is active (a flurry that racks up
+   * damage). Omit for a normal one-hit-per-swing attack.
+   */
+  hitInterval?: number;
+  /**
+   * Syphon: fraction of the damage dealt that is drained back, reducing the
+   * attacker's own damage % on hit. Deliberately small-scale — a sustain tool,
+   * not a reset button (healing is also capped per hit in the combat system).
+   */
+  syphon?: number;
+
+  /* --- Signature ultimate mechanics (each used by exactly one fighter) --- */
+
+  /** The attacker surges forward at high speed while the hitbox is active. */
+  surge?: boolean;
+  /** The attacker rises upward during the move (aerial carry ultimates). */
+  riseSelf?: boolean;
+  /** Nearby foes are pulled toward the attacker while the hitbox is active. */
+  vacuum?: boolean;
+  /** Hits every *grounded* opponent anywhere on the stage (seismic wave). */
+  quake?: boolean;
+  /**
+   * The hit deals its full damage but no knockback at all — a "curse" that
+   * loads the victim's percentage without the mercy of a launch.
+   */
+  noKnockback?: boolean;
+  /**
+   * The hit ignores *dodge* invulnerability — you cannot roll through it, only
+   * space around it (spawn invulnerability is still respected so respawns are
+   * safe). Makes an ultimate "impossible to dodge".
+   */
+  piercesInvuln?: boolean;
+  /** Fires a volley of projectiles instead of relying on the melee hitbox. */
+  projectiles?: {
+    /** Number of bolts fired over the active window. */
+    count: number;
+    /** Horizontal speed of each bolt (units/sec). */
+    speed: number;
+    /** Seconds between consecutive bolts. */
+    interval: number;
+  };
 }
 
 /** Passive ability identifiers — resolved in the combat system. */
@@ -119,11 +173,45 @@ export type PassiveId =
 export interface FighterAppearance {
   skin: string;
   hair: string;
-  hairStyle: 'short' | 'medium' | 'styled' | 'goatee';
+  hairStyle:
+    | 'short'
+    | 'medium'
+    | 'styled'
+    | 'goatee'
+    | 'spiky'
+    | 'long'
+    | 'mohawk'
+    | 'buzz'
+    | 'bald'
+    | 'ponytail';
   eyes: string;
   shirt: string;
   /** Trouser colour (falls back to a neutral dark if omitted). */
   pants?: string;
+  /** Shoe colour (falls back to near-black if omitted). */
+  shoes?: string;
+  /** Body build — scales the silhouette's bulk (defaults to 'normal'). */
+  build?: 'lean' | 'normal' | 'heavy';
+  /** Optional headband colour (worn across the forehead). */
+  headband?: string;
+  /** Optional scarf colour (worn around the neck). */
+  scarf?: string;
+  /** Optional boxing-style glove colour (replaces bare fists). */
+  gloves?: string;
+  /** Optional cape colour (hangs from the shoulders behind the torso). */
+  cape?: string;
+  /** Optional shoulder-pad colour (armoured pauldrons). */
+  shoulderPads?: string;
+  /** Optional backpack colour (tech pack with a glowing accent light). */
+  backpack?: string;
+  /** Optional knee-pad colour. */
+  kneePads?: string;
+  /** Optional glowing chest pendant (accent-coloured, emissive). */
+  pendant?: boolean;
+  /** Optional royal crown worn on the head (gold band, prongs and jewels). */
+  crown?: boolean;
+  /** Optional goggles colour — a band with tinted lenses worn on the forehead. */
+  goggles?: string;
   /** Optional accessory flags. */
   glasses?: boolean;
   goatee?: boolean;
@@ -148,6 +236,14 @@ export interface FighterConfig {
   attacks: Record<AttackKind, AttackData>;
   /** Number of extra mid-air jumps (1 = double jump). */
   extraJumps: number;
+  /**
+   * How fast this fighter fills their ultimate meter (multiplier, default 1).
+   * The core balance lever: devastating ultimates charge slowly (<1) while
+   * modest ones charge quickly (>1), so a fighter with a game-ending ult pays
+   * for it in patience, and a fighter with a weaker ult gets to use it often.
+   * Scales both the passive charge tick and charge gained by dealing damage.
+   */
+  ultChargeRate?: number;
 }
 
 /** A rectangular platform in the arena (AABB in the XY plane). */

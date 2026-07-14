@@ -40,6 +40,25 @@ export function dist(a: Vec2, b: Vec2): number {
   return Math.sqrt(distSq(a, b));
 }
 
+/**
+ * Shortest distance from point `p` to the line segment `a`→`b`.
+ * Used for swept-capsule hitboxes so an attack connects along its whole
+ * extent (body → reach tip) rather than at a single sampled point.
+ */
+export function segmentPointDistance(p: Vec2, a: Vec2, b: Vec2): number {
+  const abx = b.x - a.x;
+  const aby = b.y - a.y;
+  const lenSq = abx * abx + aby * aby;
+  if (lenSq < 1e-6) return dist(p, a);
+  let t = ((p.x - a.x) * abx + (p.y - a.y) * aby) / lenSq;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const cx = a.x + abx * t;
+  const cy = a.y + aby * t;
+  const dx = p.x - cx;
+  const dy = p.y - cy;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 /** Deterministic-ish pseudo random in [0,1) seeded by a mutable counter object. */
 export function seededRandom(state: { seed: number }): number {
   // xorshift32 — cheap and good enough for AI jitter / particle variance.

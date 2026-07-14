@@ -7,6 +7,7 @@
  */
 import { useGame } from '@/state/gameStore';
 import { useSettings } from '@/state/settingsStore';
+import { getFighter } from '@/fighters/fighterData';
 
 function formatTime(seconds: number): string {
   if (seconds <= 0) return '∞';
@@ -20,10 +21,12 @@ export function HUD() {
   const fps = useGame((s) => s.fps);
   const mode = useGame((s) => s.mode);
   const showFps = useSettings((s) => s.showFps);
+  const showCombo = useSettings((s) => s.comboCounter);
   const timeLimit = useGame((s) => s.timeLimit);
 
   const player = hud.fighters.find((f) => f.isPlayer);
   const ultReady = !!player && !player.eliminated && player.ultCharge >= 1;
+  const combo = player && !player.eliminated ? player.comboCount : 0;
   const isSurvive = mode === 'survive';
 
   return (
@@ -52,6 +55,14 @@ export function HUD() {
         </div>
       )}
 
+      {/* Live combo counter for the player. */}
+      {showCombo && combo >= 2 && (
+        <div className="combo" key={combo}>
+          <span className="combo-count">{combo}</span>
+          <span className="combo-label">HIT COMBO</span>
+        </div>
+      )}
+
       {showFps && <div className="fps">{fps} FPS</div>}
 
       <div className="hud-bottom">
@@ -64,7 +75,9 @@ export function HUD() {
               className={`hud-fighter ${f.eliminated ? 'out' : ''} ${f.isPlayer ? 'player' : ''} ${cardReady ? 'ult-ready' : ''}`}
             >
               <div className="hud-name">
-                <span className="hud-dot" style={{ background: f.accent }} />
+                <span className="hud-portrait" style={{ borderColor: f.accent }}>
+                  {getFighter(f.configId).emoji}
+                </span>
                 {f.name}
                 {f.isPlayer && ' (You)'}
               </div>

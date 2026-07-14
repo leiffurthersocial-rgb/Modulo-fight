@@ -5,8 +5,8 @@
  * transitions to the game screen, which reads those selections to build the
  * match.
  */
-import { useMemo } from 'react';
-import type { Difficulty, GameMode } from '@/core/types';
+import { useMemo, type CSSProperties } from 'react';
+import type { Difficulty } from '@/core/types';
 import { ARENAS } from '@/arenas/arenaData';
 import { FIGHTERS, getFighter } from '@/fighters/fighterData';
 import type { TrainingBehavior } from '@/core/debug';
@@ -17,13 +17,17 @@ import { audioManager } from '@/systems/audio/AudioManager';
 import { StatBars } from './StatBars';
 import { ControlsCard } from './Controls';
 
-const MODES: { id: GameMode; label: string }[] = [
-  { id: '1v1', label: '1v1' },
-  { id: 'ffa4', label: '4-Player FFA' },
-  { id: 'ffa8', label: '8-Player FFA' },
-];
-
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'insane'];
+
+/** Bucket a fighter's ultimate charge rate into a readable tier. */
+function ultChargeTier(rate = 1): 'slow' | 'normal' | 'fast' {
+  if (rate <= 0.9) return 'slow';
+  if (rate >= 1.1) return 'fast';
+  return 'normal';
+}
+function ultChargeLabel(rate = 1): string {
+  return { slow: 'Slow', normal: 'Normal', fast: 'Fast' }[ultChargeTier(rate)];
+}
 
 const BEHAVIORS: { id: TrainingBehavior; label: string }[] = [
   { id: 'stand', label: 'No Reaction' },
@@ -41,7 +45,6 @@ export function CharacterSelect() {
     playerFighterId,
     difficulty,
     stocks,
-    setMode,
     setArena,
     setPlayerFighter,
     setDifficulty,
@@ -92,26 +95,6 @@ export function CharacterSelect() {
 
         {/* Options */}
         <div className="stack">
-          {!isPractice && !isSurvive && (
-            <div className="field">
-              <span className="field-label">Mode</span>
-              <div className="chips">
-                {MODES.map((m) => (
-                  <button
-                    key={m.id}
-                    className={`chip ${mode === m.id ? 'active' : ''}`}
-                    onClick={() => {
-                      audioManager.play('select');
-                      setMode(m.id);
-                    }}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           {isSurvive && (
             <div className="survive-info">
               <div className="survive-info-title">🏆 Survive Mode</div>
@@ -307,6 +290,7 @@ export function CharacterSelect() {
             <button
               key={f.id}
               className={`fighter-card ${playerFighterId === f.id ? 'active' : ''}`}
+              style={{ '--card-accent': f.appearance.accent } as CSSProperties}
               onClick={() => {
                 audioManager.play('select');
                 setPlayerFighter(f.id);
@@ -353,6 +337,9 @@ export function CharacterSelect() {
             <div className="move-block">
               <span className="move-head">
                 <span className="kbd">U</span> {selected.attacks.ultimate.name} — Ultimate
+                <span className={`charge-badge charge-${ultChargeTier(selected.ultChargeRate)}`}>
+                  {ultChargeLabel(selected.ultChargeRate)} charge
+                </span>
               </span>
               <p className="move-desc">{selected.attacks.ultimate.description}</p>
             </div>

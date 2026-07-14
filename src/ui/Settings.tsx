@@ -174,6 +174,12 @@ export function Settings() {
             >
               Auto-Pause on Tab Switch {s.autoPauseOnBlur ? 'On' : 'Off'}
             </button>
+          </div>
+
+          <span className="field-label" style={{ marginTop: 8 }}>
+            Combat Feedback
+          </span>
+          <div className="chips">
             <button
               className={`chip ${s.hitMarkers ? 'active' : ''}`}
               onClick={() => s.setHitMarkers(!s.hitMarkers)}
@@ -181,6 +187,69 @@ export function Settings() {
             >
               Hit Markers {s.hitMarkers ? 'On' : 'Off'}
             </button>
+            <button
+              className={`chip ${s.screenFlash ? 'active' : ''}`}
+              onClick={() => s.setScreenFlash(!s.screenFlash)}
+              title="Full-screen colour flash on ultimates and KOs — turn off if it's too intense"
+            >
+              Screen Flash {s.screenFlash ? 'On' : 'Off'}
+            </button>
+            <button
+              className={`chip ${s.announcements ? 'active' : ''}`}
+              onClick={() => s.setAnnouncements(!s.announcements)}
+              title="Big K.O. and ultimate callout banners"
+            >
+              Battle Callouts {s.announcements ? 'On' : 'Off'}
+            </button>
+            <button
+              className={`chip ${s.comboCounter ? 'active' : ''}`}
+              onClick={() => s.setComboCounter(!s.comboCounter)}
+              title="On-screen combo counter while you chain hits"
+            >
+              Combo Counter {s.comboCounter ? 'On' : 'Off'}
+            </button>
+            <button
+              className={`chip ${s.speedStreaks ? 'active' : ''}`}
+              onClick={() => s.setSpeedStreaks(!s.speedStreaks)}
+              title="Motion streaks behind fast-moving fighters"
+            >
+              Speed Streaks {s.speedStreaks ? 'On' : 'Off'}
+            </button>
+          </div>
+
+          <span className="field-label" style={{ marginTop: 8 }}>
+            Camera & Effects
+          </span>
+          <div className="row" style={{ gap: 32 }}>
+            <div className="field">
+              <span className="field-label">Camera Zoom</span>
+              <div className="chips">
+                {(['close', 'default', 'wide'] as const).map((z) => (
+                  <button
+                    key={z}
+                    className={`chip ${s.cameraZoom === z ? 'active' : ''}`}
+                    onClick={() => s.setCameraZoom(z)}
+                  >
+                    {z[0].toUpperCase() + z.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <span className="field-label">Particle Amount</span>
+              <div className="chips">
+                {(['low', 'normal', 'high'] as const).map((a) => (
+                  <button
+                    key={a}
+                    className={`chip ${s.effectsAmount === a ? 'active' : ''}`}
+                    onClick={() => s.setEffectsAmount(a)}
+                    title="Applies from the next match"
+                  >
+                    {a[0].toUpperCase() + a.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="row spread" style={{ marginTop: 8 }}>
