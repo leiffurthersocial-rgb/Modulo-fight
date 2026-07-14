@@ -31,7 +31,7 @@ export function tryStartAttack(f: FighterRuntime, kind: AttackKind): boolean {
   if (cd > 0) return false;
   if (kind === 'ultimate' && f.ultCharge < 1) return false;
 
-  f.attack = { data, elapsed: 0, hitLog: new Map() };
+  f.attack = { data, elapsed: 0, hitLog: new Map(), fired: 0 };
   f.state = kind;
   f.stateTime = 0;
   if (data.cooldown > 0) f.cooldowns[data.name] = data.cooldown;
@@ -90,9 +90,36 @@ export function resolveAttackHits(
   attacker: FighterRuntime,
   others: FighterRuntime[],
   events: EventBus,
+  dt: number,
 ): void {
   const attack = attacker.attack;
   if (!attack || !attackHitboxActive(attack)) return;
+
+  // Vacuum ultimates (Leif's Hurricane Combo) drag nearby foes into the
+  // whirlwind while the hitbox is live, so the multi-hit actually traps.
+  if (attack.data.vacuum) {
+    for (const victim of others) {
+      if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
+      if (victim.invuln > 0 || victim.immovable) continue;
+      const dx = attacker.pos.x - victim.pos.x;
+      if (Math.abs(dx) < 5 && Math.abs(dx) > 0.3) {
+        victim.vel.x += Math.sign(dx) * 26 * dt;
+      }
+    }
+  }
+
+  // Seismic ultimates (Leonidas's Earthquake) strike every grounded opponent
+  // anywhere on the stage — the only escape is to be airborne.
+  if (attack.data.quake) {
+    for (const victim of others) {
+      if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
+      if (attack.hitLog.has(victim.config.id)) continue;
+      if (victim.invuln > 0 || !victim.grounded) continue;
+      attack.hitLog.set(victim.config.id, attack.elapsed);
+      applyHit(attacker, victim, attack.data, events);
+    }
+    return; // The quake IS the hitbox — skip the melee capsule.
+  }
 
   const reach = effectiveReach(attacker, attack.data);
   // Swept-capsule hitbox: a segment from just in front of the torso out to the
@@ -133,8 +160,8 @@ export function resolveAttackHits(
   }
 }
 
-/** Apply a confirmed hit from attacker to victim. */
-function applyHit(
+/** Apply a confirmed hit from attacker to victim (also used by projectiles). */
+export function applyHit(
   attacker: FighterRuntime,
   victim: FighterRuntime,
   attack: AttackData,
@@ -202,6 +229,27 @@ function applyHit(
     attacker.comboCount += 1;
     attacker.comboTimer = COMBO_RESET_TIME;
     attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012, 0, 1);
+    return;
+  }
+
+  // Curse hits (Jovan's Glorious Strike): full damage, zero launch. The
+  // victim keeps their footing — and every point of that damage.
+  if (attack.noKnockback) {
+    victim.hitstun = Math.max(victim.hitstun, 0.45);
+    victim.state = 'hit';
+    victim.stateTime = 0;
+    victim.attack = null;
+    attacker.comboCount += 1;
+    attacker.comboTimer = COMBO_RESET_TIME;
+    attacker.ultCharge = clamp(attacker.ultCharge + damage * 0.012, 0, 1);
+    victim.ultCharge = clamp(victim.ultCharge + damage * 0.006, 0, 1);
+    events.emit({
+      type: 'hit',
+      pos: { ...victim.pos },
+      power: kb,
+      attackerId: attacker.config.id,
+      victimId: victim.config.id,
+    });
     return;
   }
 

@@ -25,7 +25,9 @@ export function Announcements({ sim }: { sim: Simulation }) {
   const [callouts, setCallouts] = useState<Callout[]>([]);
   const [flashes, setFlashes] = useState<Flash[]>([]);
   const showCallouts = useSettings((s) => s.announcements);
-  const showFlash = useSettings((s) => s.screenFlash);
+  // Screen flash is skipped in battery saver — full-screen composited fades
+  // are among the most expensive things a mobile GPU can do.
+  const showFlash = useSettings((s) => s.screenFlash && !s.batterySaver);
 
   useEffect(() => {
     let nextId = 1;

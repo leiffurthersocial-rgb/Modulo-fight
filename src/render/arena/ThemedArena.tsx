@@ -18,6 +18,15 @@ interface Props {
   effectsScale?: number;
 }
 
+/**
+ * Ambient particle budget: scaled count with a floor — except at 0 (battery
+ * saver), where ambience is dropped entirely so the GPU does no per-frame
+ * decorative work at all.
+ */
+function scaledCount(scale: number, base: number, min: number): number {
+  return scale <= 0 ? 0 : Math.max(min, Math.round(base * scale));
+}
+
 /** A themed floating island for one collision platform. */
 function Island({
   platform,
@@ -82,7 +91,7 @@ function ParticleField({
   const ref = useRef<THREE.Group>(null!);
   const specs = useMemo(
     () =>
-      Array.from({ length: count }, () => ({
+      Array.from({ length: Math.max(0, count) }, () => ({
         x: (Math.random() - 0.5) * spread.x,
         y: (Math.random() - 0.5) * spread.y,
         z: spread.z[0] + Math.random() * (spread.z[1] - spread.z[0]),
@@ -104,6 +113,8 @@ function ParticleField({
       if (c.position.x < -spread.x / 2) c.position.x = spread.x / 2;
     }
   });
+
+  if (count <= 0) return null;
 
   return (
     <group ref={ref}>
@@ -240,7 +251,7 @@ function TempleDeco({
     for (let x = -half; x <= half; x += 2.4) xs.push(x);
     return xs;
   }, [main.width]);
-  const cloudCount = Math.max(4, Math.round(14 * effectsScale));
+  const cloudCount = scaledCount(effectsScale, 14, 4);
   const clouds = useMemo(
     () =>
       Array.from({ length: cloudCount }, () => ({
@@ -347,7 +358,7 @@ function VolcanoDeco({ effectsScale }: { effectsScale: number }) {
       ))}
       {/* Rising embers + slow smoke columns above the cones. */}
       <ParticleField
-        count={Math.max(6, Math.round(40 * effectsScale))}
+        count={scaledCount(effectsScale, 40, 6)}
         color="#ff8a3c"
         size={0.14}
         spread={{ x: 40, y: 30, z: [-10, 2] }}
@@ -356,7 +367,7 @@ function VolcanoDeco({ effectsScale }: { effectsScale: number }) {
         emissive
       />
       <ParticleField
-        count={Math.max(4, Math.round(18 * effectsScale))}
+        count={scaledCount(effectsScale, 18, 4)}
         color="#4a4038"
         size={0.9}
         spread={{ x: 46, y: 30, z: [-28, -18] }}
@@ -397,7 +408,7 @@ function CyberDeco({ theme, effectsScale }: { theme: ArenaTheme; effectsScale: n
       <HoloRing position={[10, 8, -11]} radius={1.1} color="#b06aff" speed={-0.7} />
       {/* Falling "data rain". */}
       <ParticleField
-        count={Math.max(10, Math.round(60 * effectsScale))}
+        count={scaledCount(effectsScale, 60, 10)}
         color={theme.accent}
         size={0.07}
         spread={{ x: 44, y: 32, z: [-14, -4] }}
@@ -465,7 +476,7 @@ function ForestDeco({ theme, effectsScale }: { theme: ArenaTheme; effectsScale: 
       ))}
       {/* Drifting falling leaves in two tones. */}
       <ParticleField
-        count={Math.max(6, Math.round(30 * effectsScale))}
+        count={scaledCount(effectsScale, 30, 6)}
         color="#8fbf5a"
         size={0.12}
         spread={{ x: 40, y: 26, z: [-12, 2] }}
@@ -474,7 +485,7 @@ function ForestDeco({ theme, effectsScale }: { theme: ArenaTheme; effectsScale: 
         emissive={false}
       />
       <ParticleField
-        count={Math.max(4, Math.round(18 * effectsScale))}
+        count={scaledCount(effectsScale, 18, 4)}
         color="#d8a03c"
         size={0.11}
         spread={{ x: 40, y: 26, z: [-12, 2] }}
@@ -619,7 +630,7 @@ function SnowDeco({ theme, effectsScale }: { theme: ArenaTheme; effectsScale: nu
         ))}
       </group>
       <ParticleField
-        count={Math.max(8, Math.round(60 * effectsScale))}
+        count={scaledCount(effectsScale, 60, 8)}
         color="#ffffff"
         size={0.1}
         spread={{ x: 44, y: 34, z: [-10, 4] }}
@@ -683,7 +694,7 @@ function SpaceDeco({ theme, effectsScale }: { theme: ArenaTheme; effectsScale: n
       </group>
       {/* Star field + fast shooting stars streaking across. */}
       <ParticleField
-        count={Math.max(10, Math.round(80 * effectsScale))}
+        count={scaledCount(effectsScale, 80, 10)}
         color="#ffffff"
         size={0.08}
         spread={{ x: 60, y: 44, z: [-25, -6] }}
@@ -692,7 +703,7 @@ function SpaceDeco({ theme, effectsScale }: { theme: ArenaTheme; effectsScale: n
         emissive
       />
       <ParticleField
-        count={Math.max(2, Math.round(6 * effectsScale))}
+        count={scaledCount(effectsScale, 6, 2)}
         color="#cfe6ff"
         size={0.12}
         spread={{ x: 70, y: 36, z: [-34, -14] }}

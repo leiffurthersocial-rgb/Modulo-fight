@@ -27,12 +27,21 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
   hitbox; ultimates telegraph with a converging ground ring, set the fighter
   ablaze in their accent colour, blast an outward shock ring and flash the
   screen — you can't miss one, even zoomed out.
+- **Signature ultimates** — every ultimate has a unique mechanic that matches
+  its name and choreography: Robin's Golden Rush surges across the stage in a
+  flurry, Leif's Hurricane Combo vacuums foes into a spinning vortex, Jovan's
+  Glorious Strike curses its victim with +100% damage but no launch,
+  Leonidas's Earthquake erupts every grounded opponent stage-wide, Erim's
+  Laser Barrage fires a volley of real projectiles, Till's Sky Storm spirals
+  upward carrying anyone he clips, Lenni's Kloten Kick is a leaping shockwave
+  dive, and Tusya's Meteor Smash spikes foes into the ground.
 - **Dynamic arena camera** — Smash-style auto-zoom that always keeps every
   fighter framed, with cinematic smoothing and impact shake.
 - **Human-like AI** — four difficulty tiers (Easy → Insane) that approach,
   space, dodge, combo, recover from off-stage, use specials/ultimates and switch
   targets.
-- **Game modes** — Practice, 1v1, 4-Player FFA, 8-Player FFA.
+- **Game modes** — 1v1 Versus, endless Survive, and Practice (see
+  `docs/NEW_MODES.md` for planned additions).
 - **Eight richly decorated arenas** — Sky Temple (flickering braziers), Volcano
   (glowing crater mouths, magma fissures, rising smoke), Cyber Arena (falling
   data-rain, rotating holograms), Forest (drifting leaves, toadstools), Castle

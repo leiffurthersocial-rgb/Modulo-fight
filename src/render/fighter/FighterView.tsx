@@ -82,6 +82,11 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
     s.facing = damp(s.facing, targetFacing, 18, dt);
     m.rotation.y = s.facing;
 
+    // Airborne velocity lean: drifting fighters bank into their motion, which
+    // makes jumps and launches read as momentum rather than sliding.
+    const leanTarget = !runtime.grounded ? clamp(runtime.vel.x * -0.02, -0.3, 0.3) : 0;
+    m.rotation.z = damp(m.rotation.z, leanTarget, 10, dt);
+
     // Hide during respawn wait; blink during invulnerability.
     if (runtime.respawnTimer > 0 || runtime.eliminated) {
       g.visible = false;
@@ -203,7 +208,8 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
     // --- Speed streak ------------------------------------------------------
     // A camera-facing accent smear that grows with horizontal speed / dashing.
     if (trail.current && trailMat.current) {
-      const streaksOn = useSettings.getState().speedStreaks;
+      const s2 = useSettings.getState();
+      const streaksOn = s2.speedStreaks && !s2.batterySaver;
       const dashing = runtime.state === 'dash' || runtime.state === 'dodge';
       const norm = streaksOn ? clamp((speed - 6.5) / 16, 0, 1) + (dashing ? 0.5 : 0) : 0;
       s.trail = damp(s.trail, Math.min(norm, 1), 20, dt);

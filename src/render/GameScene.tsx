@@ -11,6 +11,7 @@ import type { Simulation } from '@/systems/simulation/Simulation';
 import { ArenaView } from './arena/ArenaView';
 import { FighterView } from './fighter/FighterView';
 import { Particles } from './effects/Particles';
+import { Projectiles } from './effects/Projectiles';
 import { Shockwaves } from './effects/Shockwaves';
 import { HitMarkers } from './effects/HitMarkers';
 import { DebugOverlay } from './effects/DebugOverlay';
@@ -74,8 +75,10 @@ export function GameScene({
 
       <Fighters sim={sim} />
 
-      <Particles events={sim.events} maxParticles={Math.round(260 * effectsScale)} />
-      <Shockwaves events={sim.events} />
+      <Particles events={sim.events} maxParticles={Math.max(40, Math.round(260 * effectsScale))} />
+      <Projectiles sim={sim} />
+      {/* Shockwave rings are pure flourish — skipped entirely in low power. */}
+      {effectsScale > 0.3 && <Shockwaves events={sim.events} />}
       {hitMarkers && <HitMarkers events={sim.events} />}
       <DebugOverlay sim={sim} />
 

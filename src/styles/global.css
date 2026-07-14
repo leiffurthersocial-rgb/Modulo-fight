@@ -293,6 +293,8 @@ button {
 }
 
 .panel {
+  position: relative;
+  overflow: hidden;
   background: var(--panel);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius);
@@ -301,6 +303,18 @@ button {
   width: min(920px, 94vw);
   backdrop-filter: blur(10px);
   animation: panelIn 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+/* Accent hairline across the panel's top edge. */
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent);
+  opacity: 0.7;
 }
 
 @keyframes panelIn {
@@ -370,6 +384,16 @@ button {
   transition: all 0.14s ease;
 }
 
+.chip:hover:not(.disabled):not(.active) {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.chip:active {
+  transform: translateY(0) scale(0.96);
+}
+
 .chip.active {
   background: rgba(90, 209, 255, 0.16);
   border-color: var(--accent);
@@ -426,6 +450,11 @@ button {
 .fighter-emoji {
   font-size: 24px;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  transition: transform 0.16s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.fighter-card:hover .fighter-emoji {
+  transform: scale(1.25) rotate(-6deg);
 }
 
 .move-block {

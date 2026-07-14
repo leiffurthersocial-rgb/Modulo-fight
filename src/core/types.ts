@@ -44,7 +44,7 @@ export type AttackKind = 'light' | 'heavy' | 'special' | 'ultimate';
 export type Difficulty = 'human' | 'easy' | 'normal' | 'hard' | 'insane';
 
 /** Supported game modes. */
-export type GameMode = 'practice' | '1v1' | 'ffa4' | 'ffa8' | 'survive';
+export type GameMode = 'practice' | '1v1' | 'survive';
 
 /** Top-level app screens. */
 export type Screen =
@@ -125,6 +125,31 @@ export interface AttackData {
    * not a reset button (healing is also capped per hit in the combat system).
    */
   syphon?: number;
+
+  /* --- Signature ultimate mechanics (each used by exactly one fighter) --- */
+
+  /** The attacker surges forward at high speed while the hitbox is active. */
+  surge?: boolean;
+  /** The attacker rises upward during the move (aerial carry ultimates). */
+  riseSelf?: boolean;
+  /** Nearby foes are pulled toward the attacker while the hitbox is active. */
+  vacuum?: boolean;
+  /** Hits every *grounded* opponent anywhere on the stage (seismic wave). */
+  quake?: boolean;
+  /**
+   * The hit deals its full damage but no knockback at all — a "curse" that
+   * loads the victim's percentage without the mercy of a launch.
+   */
+  noKnockback?: boolean;
+  /** Fires a volley of projectiles instead of relying on the melee hitbox. */
+  projectiles?: {
+    /** Number of bolts fired over the active window. */
+    count: number;
+    /** Horizontal speed of each bolt (units/sec). */
+    speed: number;
+    /** Seconds between consecutive bolts. */
+    interval: number;
+  };
 }
 
 /** Passive ability identifiers — resolved in the combat system. */
@@ -177,8 +202,10 @@ export interface FighterAppearance {
   kneePads?: string;
   /** Optional glowing chest pendant (accent-coloured, emissive). */
   pendant?: boolean;
-  /** Optional royal crown worn on the head (gold band, prongs and a jewel). */
+  /** Optional royal crown worn on the head (gold band, prongs and jewels). */
   crown?: boolean;
+  /** Optional goggles colour — a band with tinted lenses worn on the forehead. */
+  goggles?: string;
   /** Optional accessory flags. */
   glasses?: boolean;
   goatee?: boolean;

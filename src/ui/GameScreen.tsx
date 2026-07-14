@@ -52,11 +52,13 @@ export function GameScreen() {
   const debugOpen = useDebug((s) => s.open);
   const setDebugOpen = useDebug((s) => s.setOpen);
 
-  // Battery saver overrides quality/effects regardless of the Quality setting.
+  // Battery saver overrides quality/effects regardless of the Quality setting:
+  // no shadows/bloom (low quality), zero ambient particles, no shockwaves or
+  // motion streaks, and a reduced render resolution.
   const effectiveQuality = batterySaver ? 'low' : quality;
   const effectiveCameraShake = cameraShake && !batterySaver;
   const effectsScale = batterySaver
-    ? 0.35
+    ? 0
     : { low: 0.5, normal: 1, high: 1.5 }[effectsAmount];
 
   const [matchKey, setMatchKey] = useState(0);
@@ -197,7 +199,7 @@ export function GameScreen() {
     <div className="app">
       <Canvas
         shadows={effectiveQuality !== 'low'}
-        dpr={batterySaver ? 1 : effectiveQuality === 'high' ? [1, 2] : [1, 1.5]}
+        dpr={batterySaver ? 0.75 : effectiveQuality === 'high' ? [1, 2] : [1, 1.5]}
         gl={{ antialias: effectiveQuality === 'high', powerPreference: batterySaver ? 'low-power' : 'high-performance' }}
         camera={{ position: [0, 4, 24], fov: 42 }}
       >

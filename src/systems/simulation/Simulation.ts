@@ -37,6 +37,8 @@ import {
   integratePosition,
 } from '@/systems/physics/PhysicsSystem';
 import {
+  applyHit,
+  attackHitboxActive,
   resolveAttackHits,
   tryStartAttack,
   updateAttack,
@@ -75,6 +77,23 @@ export interface MatchConfig {
 
 export type MatchStatus = 'running' | 'paused' | 'finished';
 
+/** A live projectile (Erim's Laser Barrage). Plain object, pooled by index. */
+export interface Projectile {
+  active: boolean;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  /** Index of the fighter who fired it (credits hits/KOs). */
+  ownerIndex: number;
+  /** Remaining lifetime in seconds. */
+  life: number;
+}
+
+const MAX_PROJECTILES = 12;
+const PROJECTILE_RADIUS = 0.45;
+const PROJECTILE_LIFE = 1.6;
+
 export interface MatchResult {
   winnerIndex: number | null;
   placements: number[]; // fighter indices best → worst
@@ -98,6 +117,18 @@ export class Simulation {
 
   /** Remaining impact-freeze time; while > 0 the whole match is paused. */
   hitStop = 0;
+
+  /** Fixed pool of projectiles (Laser Barrage bolts). Renderer reads directly. */
+  readonly projectiles: Projectile[] = Array.from({ length: MAX_PROJECTILES }, () => ({
+    active: false,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    ownerIndex: 0,
+    life: 0,
+  }));
+  private projectileCursor = 0;
 
   private ai = new AIController();
   private accumulator = 0;
@@ -196,8 +227,11 @@ export class Simulation {
 
     // 3. Resolve combat after everyone has moved (order-independent hits).
     for (const f of this.fighters) {
-      resolveAttackHits(f, this.fighters, this.events);
+      resolveAttackHits(f, this.fighters, this.events, dt);
     }
+
+    // 3b. Projectiles: fire pending bolts, then fly + collide.
+    this.updateProjectiles(dt);
 
     // 4. Blast zones, stocks and respawns.
     for (const f of this.fighters) this.handleBoundaries(f, dt);
@@ -269,6 +303,17 @@ export class Simulation {
     } else if (f.shielding) {
       // Drop shield if we got hit / became busy.
       f.shielding = false;
+    }
+
+    // --- Signature ultimate movement -----------------------------------------
+    // Surge (Golden Rush): the attacker barrels forward while the hitbox is
+    // live. Rise (Sky Storm): the attacker spirals upward, carrying foes.
+    if (f.attack && attackHitboxActive(f.attack)) {
+      if (f.attack.data.surge) f.vel.x = f.facing * 15;
+      if (f.attack.data.riseSelf) {
+        f.vel.y = Math.max(f.vel.y, 9);
+        f.grounded = false;
+      }
     }
 
     // --- Directional influence ---------------------------------------------
@@ -399,6 +444,61 @@ export class Simulation {
     f.invuln = SPAWN_INVULN;
     f.respawnTimer = 0.4;
     f.state = 'fall';
+  }
+
+  /** Fire pending Laser Barrage bolts, then advance and collide all of them. */
+  private updateProjectiles(dt: number): void {
+    // Fire: any fighter mid-ultimate with a projectile config emits bolts on
+    // a fixed cadence once startup completes.
+    for (const f of this.fighters) {
+      const atk = f.attack;
+      const cfg = atk?.data.projectiles;
+      if (!atk || !cfg) continue;
+      while (
+        atk.fired < cfg.count &&
+        atk.elapsed >= atk.data.startup + atk.fired * cfg.interval
+      ) {
+        const p = this.projectiles[this.projectileCursor];
+        this.projectileCursor = (this.projectileCursor + 1) % MAX_PROJECTILES;
+        p.active = true;
+        p.x = f.pos.x + f.facing * 0.9;
+        // Slight vertical fan so the volley sweeps a band, not a single line.
+        p.y = f.pos.y + 0.35 + (atk.fired % 3) * 0.35;
+        p.vx = f.facing * cfg.speed;
+        p.vy = 0;
+        p.ownerIndex = f.index;
+        p.life = PROJECTILE_LIFE;
+        atk.fired += 1;
+      }
+    }
+
+    // Fly + collide.
+    const b = this.config.arena.blastZone;
+    for (const p of this.projectiles) {
+      if (!p.active) continue;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+      if (p.life <= 0 || p.x < b.left || p.x > b.right) {
+        p.active = false;
+        continue;
+      }
+      const owner = this.fighters[p.ownerIndex];
+      if (!owner) {
+        p.active = false;
+        continue;
+      }
+      for (const victim of this.fighters) {
+        if (victim === owner || victim.eliminated || victim.respawnTimer > 0) continue;
+        if (victim.invuln > 0) continue;
+        const dx = victim.pos.x - p.x;
+        const dy = victim.pos.y - p.y;
+        if (dx * dx + dy * dy > (PROJECTILE_RADIUS + 0.6) ** 2) continue;
+        applyHit(owner, victim, owner.config.attacks.ultimate, this.events);
+        p.active = false;
+        break;
+      }
+    }
   }
 
   /** Produce input for a practice-mode training dummy. */

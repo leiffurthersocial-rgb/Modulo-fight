@@ -36,7 +36,13 @@ export type AttackStyle =
   | 'barrage'
   | 'charge'
   | 'uppercut'
-  | 'lunge';
+  | 'lunge'
+  // Signature ultimate choreographies — one per fighter, matching the move's
+  // name so what happens on screen is what the tooltip promised.
+  | 'rush' // Golden Rush: low, blazing forward flurry
+  | 'hurricane' // Hurricane Combo: multi-revolution vortex
+  | 'royal' // Glorious Strike: stately decree, then one sweeping blow
+  | 'skyward'; // Sky Storm: spiralling ascent
 
 const IDLE: Pose = {
   bodyY: 0,
@@ -54,10 +60,15 @@ const IDLE: Pose = {
 /** Map a move to an animation style using its name and category. */
 export function deriveAttackStyle(attack: AttackData): AttackStyle {
   const n = attack.name.toLowerCase();
+  // Signature ultimates first — exact choreography for exact names.
+  if (/golden rush/.test(n)) return 'rush';
+  if (/hurricane/.test(n)) return 'hurricane';
+  if (/glorious/.test(n)) return 'royal';
+  if (/sky storm/.test(n)) return 'skyward';
   if (/(kick|dive|kloten|flying|sky)/.test(n)) {
     return /(dive|kloten|sky|meteor)/.test(n) ? 'dive' : 'kick';
   }
-  if (/(spin|roundhouse|cyclone|hurricane)/.test(n)) return 'spin';
+  if (/(spin|roundhouse|cyclone)/.test(n)) return 'spin';
   if (/(slam|sledge|earthquake|ground|meteor)/.test(n)) return 'slam';
   if (/(rapid|punches|barrage|laser)/.test(n)) return 'barrage';
   if (/(charge)/.test(n)) return 'charge';
@@ -145,6 +156,57 @@ function attackPose(style: AttackStyle, p: number, time: number, facing: number)
       o.bodyY = -0.08 * wind;
       o.squash = 1 + 0.1 * wind;
       break;
+    case 'rush': {
+      // Golden Rush: crouched low, torso pitched hard forward, fists a blur —
+      // a fighter turned battering ram.
+      const osc = Math.sin(time * 40);
+      o.bodyTilt = 0.2 * wind + 0.65 * strike;
+      o.bodyY = -0.15 * strike;
+      o.armRight = -1.9 - osc * 0.7;
+      o.armLeft = -1.9 + osc * 0.7;
+      o.legLeft = 0.7 * strike + osc * 0.4;
+      o.legRight = 0.7 * strike - osc * 0.4;
+      o.squash = 1 - 0.08 * strike;
+      break;
+    }
+    case 'hurricane': {
+      // Hurricane Combo: a genuine multi-revolution vortex, one leg flung
+      // out, arms alternating between wide and tucked as it accelerates.
+      const rev = p * p * Math.PI * 7; // accelerating spin
+      o.bodyRotY = facing * rev;
+      const tuck = Math.sin(p * Math.PI); // wide → tucked → wide
+      o.armLeft = 1.9 - tuck * 2.4;
+      o.armRight = -1.9 + tuck * 2.4;
+      o.legRight = -1.3 * tuck;
+      o.legLeft = 0.3 * tuck;
+      o.bodyTilt = 0.25 * tuck;
+      o.bodyY = 0.12 * tuck;
+      break;
+    }
+    case 'royal': {
+      // Glorious Strike: rise tall, one arm raised in decree during the long
+      // wind-up — then a single, sweeping regal blow with a quarter turn.
+      o.squash = 1 + 0.1 * wind - 0.04 * strike;
+      o.bodyY = 0.12 * wind;
+      o.armRight = -3.0 * wind + 2.2 * strike - 0.4 * recover;
+      o.armLeft = 0.4 * wind - 1.2 * strike;
+      o.bodyRotY = facing * (0.15 * wind - Math.PI * 0.3 * strike);
+      o.bodyTilt = -0.12 * wind + 0.3 * strike;
+      o.headTilt = -0.15 * wind;
+      break;
+    }
+    case 'skyward': {
+      // Sky Storm: legs tucked, arms overhead, spiralling upward — the climb
+      // itself comes from the physics (riseSelf), the pose sells the spiral.
+      o.bodyRotY = facing * p * Math.PI * 5;
+      o.armLeft = -2.6 + 0.4 * Math.sin(time * 20);
+      o.armRight = -2.6 - 0.4 * Math.sin(time * 20);
+      o.legLeft = 1.2;
+      o.legRight = 1.0;
+      o.bodyTilt = 0.15;
+      o.squash = 1.06;
+      break;
+    }
     case 'lunge':
     default:
       // A dashing shoulder-forward strike with a wide stance.
@@ -212,6 +274,8 @@ export function computePose(
       p.bodyTilt = 0.36;
       p.headTilt = 0.08;
       p.bodyY = Math.abs(Math.sin(time * 15)) * 0.12;
+      // Shoulders counter-rotate against the stride for a natural gait.
+      p.bodyRotY = Math.sin(time * 15) * 0.14;
       break;
     }
     case 'jump':

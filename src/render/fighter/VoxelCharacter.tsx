@@ -238,20 +238,64 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
           {appearance.headband && (
             <Box args={[0.6, 0.1, 0.56]} position={[0, 0.18, 0.01]} color={appearance.headband} matRef={collect} />
           )}
-          {/* Optional royal crown: a gold band, four prongs and a gemstone.
-              Sits just above the hair silhouette (hair caps top out at 0.42
-              in head-local space) so it reads clearly instead of clipping
-              into the hairline. */}
+          {/* Optional royal crown: a tall gold band, five prongs (the centre
+              one highest, tipped with orbs) and three gemstones across the
+              brow. Sits above the hair silhouette (hair caps top out at 0.42
+              in head-local space) so it reads clearly instead of clipping. */}
           {appearance.crown && (
-            <group position={[0, 0.47, 0]}>
-              <Box args={[0.62, 0.14, 0.58]} position={[0, 0, 0]} color="#ffd54a" matRef={collect} roughness={0.3} metalness={0.7} />
-              {[-0.22, -0.07, 0.08, 0.23].map((x, i) => (
-                <Box key={i} args={[0.09, 0.16, 0.09]} position={[x, 0.14, 0]} color="#ffd54a" matRef={collect} roughness={0.3} metalness={0.7} />
+            <group position={[0, 0.48, 0]}>
+              {/* Band. */}
+              <Box args={[0.64, 0.16, 0.6]} position={[0, 0, 0]} color="#f5c53c" matRef={collect} roughness={0.25} metalness={0.8} />
+              {/* Five prongs — tallest in the centre, stepping down outward. */}
+              {[
+                [-0.26, 0.14],
+                [-0.13, 0.2],
+                [0, 0.27],
+                [0.13, 0.2],
+                [0.26, 0.14],
+              ].map(([x, h], i) => (
+                <Box key={i} args={[0.08, h, 0.08]} position={[x, 0.08 + h / 2, 0.22]} color="#f5c53c" matRef={collect} roughness={0.25} metalness={0.8} />
               ))}
-              <mesh position={[0, 0.09, 0.3]}>
-                <boxGeometry args={[0.09, 0.09, 0.05]} />
-                <meshStandardMaterial color="#ff3d5c" emissive="#ff3d5c" emissiveIntensity={0.6} roughness={0.2} metalness={0.4} />
-              </mesh>
+              {/* Orb tips on the three central prongs. */}
+              {[
+                [-0.13, 0.32],
+                [0, 0.39],
+                [0.13, 0.32],
+              ].map(([x, y], i) => (
+                <mesh key={`o${i}`} position={[x, y, 0.22]}>
+                  <sphereGeometry args={[0.05, 8, 8]} />
+                  <meshStandardMaterial color="#ffe9a0" roughness={0.2} metalness={0.85} />
+                </mesh>
+              ))}
+              {/* Three gemstones across the brow: emerald, ruby, emerald. */}
+              {[
+                [-0.16, '#3ddc84'],
+                [0, '#ff3d5c'],
+                [0.16, '#3ddc84'],
+              ].map(([x, c], i) => (
+                <mesh key={`g${i}`} position={[x as number, 0, 0.31]}>
+                  <boxGeometry args={[0.08, 0.09, 0.04]} />
+                  <meshStandardMaterial color={c as string} emissive={c as string} emissiveIntensity={0.55} roughness={0.15} metalness={0.4} />
+                </mesh>
+              ))}
+            </group>
+          )}
+          {/* Optional goggles worn on the forehead: strap + two tinted lenses. */}
+          {appearance.goggles && (
+            <group position={[0, 0.19, 0]}>
+              <Box args={[0.6, 0.09, 0.56]} position={[0, 0, 0]} color="#17181c" matRef={collect} roughness={0.6} />
+              {[-0.12, 0.12].map((x, i) => (
+                <mesh key={i} position={[x, 0.02, 0.3]}>
+                  <boxGeometry args={[0.15, 0.12, 0.05]} />
+                  <meshStandardMaterial
+                    color={appearance.goggles}
+                    emissive={appearance.goggles}
+                    emissiveIntensity={0.35}
+                    roughness={0.15}
+                    metalness={0.5}
+                  />
+                </mesh>
+              ))}
             </group>
           )}
           {/* Eyes (white sclera + coloured pupil). */}

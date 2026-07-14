@@ -26,6 +26,8 @@ export interface ActiveAttack {
    * (`hitInterval` set) re-hits once enough time has passed.
    */
   hitLog: Map<string, number>;
+  /** Projectile ultimates: how many bolts have been fired so far. */
+  fired: number;
 }
 
 export interface FighterRuntime {

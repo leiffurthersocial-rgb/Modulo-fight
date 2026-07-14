@@ -105,14 +105,8 @@ interface GameState extends PersistedSelections {
   setFps: (fps: number) => void;
 }
 
-/** How many total fighters each mode fields (1 player + N bots). */
-export const MODE_FIGHTER_COUNT: Record<GameMode, number> = {
-  practice: 2,
-  '1v1': 2,
-  ffa4: 4,
-  ffa8: 8,
-  survive: 2,
-};
+/** Modes accepted from persisted storage (guards against removed modes). */
+const VALID_MODES: GameMode[] = ['practice', '1v1', 'survive'];
 
 const STORAGE_KEY = 'modulo-fight-selections';
 
@@ -168,7 +162,9 @@ export const useGame = create<GameState>((set, get) => {
   return {
     screen: 'mainMenu',
 
-    mode: saved.mode ?? DEFAULTS.mode,
+    // Sanitize the persisted mode — a removed mode (e.g. the old FFA) saved by
+    // a previous version must not brick match setup.
+    mode: saved.mode && VALID_MODES.includes(saved.mode) ? saved.mode : DEFAULTS.mode,
     arenaId: saved.arenaId ?? DEFAULTS.arenaId,
     playerFighterId: saved.playerFighterId ?? DEFAULTS.playerFighterId,
     botFighterIds: saved.botFighterIds ?? DEFAULTS.botFighterIds,

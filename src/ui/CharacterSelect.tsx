@@ -6,7 +6,7 @@
  * match.
  */
 import { useMemo, type CSSProperties } from 'react';
-import type { Difficulty, GameMode } from '@/core/types';
+import type { Difficulty } from '@/core/types';
 import { ARENAS } from '@/arenas/arenaData';
 import { FIGHTERS, getFighter } from '@/fighters/fighterData';
 import type { TrainingBehavior } from '@/core/debug';
@@ -16,12 +16,6 @@ import { useRecords } from '@/state/recordsStore';
 import { audioManager } from '@/systems/audio/AudioManager';
 import { StatBars } from './StatBars';
 import { ControlsCard } from './Controls';
-
-const MODES: { id: GameMode; label: string }[] = [
-  { id: '1v1', label: '1v1' },
-  { id: 'ffa4', label: '4-Player FFA' },
-  { id: 'ffa8', label: '8-Player FFA' },
-];
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'insane'];
 
@@ -41,7 +35,6 @@ export function CharacterSelect() {
     playerFighterId,
     difficulty,
     stocks,
-    setMode,
     setArena,
     setPlayerFighter,
     setDifficulty,
@@ -92,26 +85,6 @@ export function CharacterSelect() {
 
         {/* Options */}
         <div className="stack">
-          {!isPractice && !isSurvive && (
-            <div className="field">
-              <span className="field-label">Mode</span>
-              <div className="chips">
-                {MODES.map((m) => (
-                  <button
-                    key={m.id}
-                    className={`chip ${mode === m.id ? 'active' : ''}`}
-                    onClick={() => {
-                      audioManager.play('select');
-                      setMode(m.id);
-                    }}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           {isSurvive && (
             <div className="survive-info">
               <div className="survive-info-title">🏆 Survive Mode</div>
