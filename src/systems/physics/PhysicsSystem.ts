@@ -174,6 +174,30 @@ export function standingPlatform(arena: ArenaConfig, feetY: number, x: number): 
   return null;
 }
 
+/**
+ * Ledge safety for grounded burst moves (dash, dodge, surge ultimates): caps a
+ * fighter's horizontal velocity for this step so they can't slide past the
+ * edge of the platform they're standing on. Returns the (possibly reduced)
+ * velocity; if they're airborne or off any platform, the input is returned
+ * unchanged so aerial control and intentional off-stage movement are untouched.
+ */
+export function groundEdgeClampVx(
+  f: FighterRuntime,
+  arena: ArenaConfig,
+  vx: number,
+  dt: number,
+): number {
+  if (!f.grounded) return vx;
+  const plat = standingPlatform(arena, f.pos.y - FIGHTER_HALF_HEIGHT, f.pos.x);
+  if (!plat) return vx;
+  const margin = FIGHTER_HALF_WIDTH + 0.1;
+  const rightEdge = plat.x + plat.width / 2 - margin;
+  const leftEdge = plat.x - plat.width / 2 + margin;
+  if (vx > 0) return Math.min(vx, Math.max(0, rightEdge - f.pos.x) / dt);
+  if (vx < 0) return Math.max(vx, -Math.max(0, f.pos.x - leftEdge) / dt);
+  return vx;
+}
+
 /** Returns true if the fighter has crossed a blast zone this step. */
 export function crossedBlastZone(f: FighterRuntime, arena: ArenaConfig): boolean {
   const b = arena.blastZone;

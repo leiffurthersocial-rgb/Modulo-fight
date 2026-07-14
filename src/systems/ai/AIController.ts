@@ -95,11 +95,40 @@ export class AIController {
 
     // Face the target.
     const desiredFacing = dx >= 0 ? 1 : -1;
+    const gap = dist(self.pos, target.pos);
 
-    // --- Reactive dodge -----------------------------------------------------
-    const targetAttacking = target.attack && target.attack.elapsed < target.attack.data.startup + 0.05;
-    const closeEnoughToBeHit = dist(self.pos, target.pos) < range + 1;
-    if (targetAttacking && closeEnoughToBeHit && Math.random() < profile.reaction * dt * 12) {
+    // --- React to the target's ULTIMATE (the biggest threat) ----------------
+    // Each ultimate type demands a different escape, and the AI knows which:
+    //   • quake (Leonidas) — only the airborne survive, so JUMP;
+    //   • pierces-invuln (Jovan) — a dodge won't work, so RUN out of range;
+    //   • anything else — dodge-roll through it.
+    // Reaction quality scales with difficulty, so easy bots still eat ults.
+    const tAtk = target.attack;
+    const targetUlting =
+      tAtk?.data.kind === 'ultimate' && tAtk.elapsed < tAtk.data.startup + tAtk.data.active;
+    if (targetUlting && gap < 7) {
+      const data = tAtk!.data;
+      if (data.quake) {
+        if (self.grounded && Math.random() < profile.tech * dt * 30) input.jump = true;
+        input.moveX = -desiredFacing;
+        return input;
+      }
+      if (data.piercesInvuln) {
+        // Can't dodge it — put distance between us before the strike lands.
+        input.moveX = -desiredFacing;
+        input.sprint = true;
+        return input;
+      }
+      if (Math.random() < profile.reaction * dt * 22) {
+        input.dodge = true;
+        input.moveX = -desiredFacing * 0.5;
+        return input;
+      }
+    }
+
+    // --- Reactive dodge vs normal attacks -----------------------------------
+    const targetAttacking = tAtk && tAtk.elapsed < tAtk.data.startup + 0.05;
+    if (targetAttacking && gap < range + 1 && Math.random() < profile.reaction * dt * 12) {
       input.dodge = true;
       input.moveX = -desiredFacing * 0.5;
       return input;
@@ -124,24 +153,38 @@ export class AIController {
     if (self.pos.x < edgeLeft + 0.6 && input.moveX < 0) input.moveX = 0;
     if (self.pos.x > edgeRight - 0.6 && input.moveX > 0) input.moveX = 0;
 
-    // Sprint to close large gaps.
+    // Sprint to close large gaps, and dash to burst-close medium ones (only
+    // when already facing the target so the dash goes the right way; the
+    // physics ledge-clamp keeps a grounded dash from sliding off the stage).
     if (horizontalDist > range * 2.5) input.sprint = true;
+    if (
+      horizontalDist > range * 3 &&
+      self.grounded &&
+      self.facing === desiredFacing &&
+      Math.random() < profile.tech * dt * 4
+    ) {
+      input.dash = true;
+    }
 
-    // --- Jump to reach airborne targets ------------------------------------
-    if (dy > 1.5 && horizontalDist < range * 2 && Math.random() < profile.tech * dt * 8) {
+    // --- Jump to reach airborne / higher targets ---------------------------
+    if (dy > 1.5 && horizontalDist < range * 2.5 && Math.random() < profile.tech * dt * 8) {
       input.jump = true;
     }
 
     // --- Attacks -----------------------------------------------------------
     const inRange = horizontalDist < range && Math.abs(dy) < 1.6;
     if (inRange && Math.random() < profile.aggression * dt * 10) {
-      // Ultimate when charged and target is at kill percent or just close.
-      if (self.ultCharge >= 1 && Math.random() < profile.abilityUse) {
+      const special = self.config.attacks.special;
+      const ult = self.config.attacks.ultimate;
+      // Ultimate logic knows each ult's character: fire a curse (Jovan) or a
+      // quake (Leonidas, while the target is grounded) whenever it will land;
+      // otherwise save ultimates for kill percent.
+      const wantUlt =
+        self.ultCharge >= 1 &&
+        (target.damage > 45 || ult.piercesInvuln || (!!ult.quake && target.grounded));
+      if (wantUlt && Math.random() < profile.abilityUse) {
         input.ultimate = true;
-      } else if (
-        (self.cooldowns[self.config.attacks.special.name] ?? 0) <= 0 &&
-        Math.random() < profile.abilityUse
-      ) {
+      } else if ((self.cooldowns[special.name] ?? 0) <= 0 && Math.random() < profile.abilityUse) {
         input.special = true;
       } else if (target.damage > 60 && Math.random() < 0.6) {
         input.heavy = true; // go for the kill

@@ -141,6 +141,12 @@ export interface AttackData {
    * loads the victim's percentage without the mercy of a launch.
    */
   noKnockback?: boolean;
+  /**
+   * The hit ignores *dodge* invulnerability — you cannot roll through it, only
+   * space around it (spawn invulnerability is still respected so respawns are
+   * safe). Makes an ultimate "impossible to dodge".
+   */
+  piercesInvuln?: boolean;
   /** Fires a volley of projectiles instead of relying on the melee hitbox. */
   projectiles?: {
     /** Number of bolts fired over the active window. */

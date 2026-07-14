@@ -13,8 +13,6 @@ import {
   DODGE_DURATION,
   DODGE_INVULN,
   DODGE_SPEED,
-  FIGHTER_HALF_HEIGHT,
-  FIGHTER_HALF_WIDTH,
   FIXED_DT,
   HITSTOP_BASE,
   HITSTOP_KO,
@@ -35,9 +33,9 @@ import { emptyInput } from '@/systems/input/InputState';
 import { AIController } from '@/systems/ai/AIController';
 import {
   crossedBlastZone,
+  groundEdgeClampVx,
   integrateMovement,
   integratePosition,
-  standingPlatform,
 } from '@/systems/physics/PhysicsSystem';
 import {
   applyHit,
@@ -310,41 +308,11 @@ export class Simulation {
     }
 
     // --- Signature ultimate movement -----------------------------------------
-    // Surge (Golden Rush): the attacker barrels forward while the hitbox is
-    // live — but only across solid ground. The velocity is capped every tick
-    // to whatever distance remains to the platform edge (rather than just
-    // gating on `grounded`), so a fast surge can't overshoot the edge in a
-    // single step and go airborne before the edge check catches it; he skids
-    // to a stop right at the ledge instead of launching into the blast zone.
-    // An already-airborne surge (e.g. triggered mid-combo) isn't edge-checked
-    // since there's no ledge under him to fall off of. Rise (Sky Storm): the
-    // attacker spirals upward, carrying foes.
+    // Surge (Golden Rush): the attacker drives forward while the hitbox is live,
+    // but only across solid ground — never off a ledge (the clamp below keeps
+    // him on his platform for the whole move). Rise (Sky Storm): spirals upward.
     if (f.attack && attackHitboxActive(f.attack)) {
-      if (f.attack.data.surge) {
-        const speed = 15;
-        if (f.grounded) {
-          const ground = standingPlatform(this.config.arena, f.pos.y - FIGHTER_HALF_HEIGHT, f.pos.x);
-          if (ground) {
-            // Small buffer beyond the fighter's half-width so he lands
-            // comfortably grounded rather than exactly on the collision
-            // boundary (which can round to "just off the edge").
-            const margin = FIGHTER_HALF_WIDTH + 0.15;
-            const rightEdge = ground.x + ground.width / 2 - margin;
-            const leftEdge = ground.x - ground.width / 2 + margin;
-            if (f.facing === 1) {
-              const dist = Math.max(0, rightEdge - f.pos.x);
-              f.vel.x = Math.min(speed, dist / dt);
-            } else {
-              const dist = Math.max(0, f.pos.x - leftEdge);
-              f.vel.x = -Math.min(speed, dist / dt);
-            }
-          } else {
-            f.vel.x = 0; // no ground beneath him at all — don't surge further
-          }
-        } else {
-          f.vel.x = f.facing * speed;
-        }
-      }
+      if (f.attack.data.surge && f.grounded) f.vel.x = f.facing * 15;
       if (f.attack.data.riseSelf) {
         f.vel.y = Math.max(f.vel.y, 9);
         f.grounded = false;
@@ -361,6 +329,16 @@ export class Simulation {
     // --- Movement integration ----------------------------------------------
     const moveInput = this.effectiveMoveInput(f, input);
     integrateMovement(f, moveInput, dt, canAct && f.actionTimer <= 0);
+    // Ledge safety: a grounded burst move (dash, dodge, or a surge ultimate)
+    // skids to a stop at the platform edge instead of sliding into the blast
+    // zone. This covers the *entire* move — including an ultimate's startup,
+    // where a committal forward lunge could otherwise carry the fighter off
+    // before the active frames even begin.
+    const bursting =
+      f.state === 'dash' || f.state === 'dodge' || (f.attack?.data.surge ?? false);
+    if (bursting && f.grounded) {
+      f.vel.x = groundEdgeClampVx(f, this.config.arena, f.vel.x, dt);
+    }
     integratePosition(f, moveInput, this.config.arena, dt);
 
     // Landing puff — only for meaningful drops, so walking off ledges is quiet.

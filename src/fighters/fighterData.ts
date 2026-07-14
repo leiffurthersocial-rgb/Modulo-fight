@@ -195,14 +195,15 @@ export const FIGHTERS: FighterConfig[] = [
       ultimate: makeAttack('ultimate', {
         name: 'Glorious Strike',
         description:
-          "A royal decree: one regal blow that curses the victim with +100% damage — but grants no launch. The execution comes later.",
+          "A royal decree you cannot dodge — rolling through it fails. One regal blow curses the victim with +100% damage but no launch; only staying out of its reach keeps you safe.",
         damage: 100,
         noKnockback: true,
-        startup: 0.5,
+        piercesInvuln: true,
+        startup: 0.42,
         active: 0.22,
         recovery: 0.6,
         reach: 2.4,
-        radius: 1.2,
+        radius: 1.3,
         cooldown: 14,
       }),
     },
@@ -263,10 +264,10 @@ export const FIGHTERS: FighterConfig[] = [
       ultimate: makeAttack('ultimate', {
         name: 'Earthquake',
         description:
-          'Shatters the ground itself — every opponent touching the stage is erupted skyward, no matter how far away. Only the airborne are spared.',
+          'Shatters the ground itself — every opponent touching the stage is erupted skyward, no matter how far away. A brief rumble telegraphs it: jump in that window or be caught.',
         damage: 22,
         quake: true,
-        startup: 0.3,
+        startup: 0.34,
         baseKnockback: 13,
         knockbackScaling: 0.42,
         angle: Math.PI * 0.5,
@@ -512,9 +513,11 @@ export const FIGHTERS: FighterConfig[] = [
       }),
       ultimate: makeAttack('ultimate', {
         name: 'Meteor Smash',
-        description: 'A meteoric downward smash that spikes foes into the blast zone.',
+        description:
+          'A near-instant meteoric smash that spikes foes into the blast zone — barely any wind-up, so you must read it early and dodge on reaction.',
         damage: 30,
         baseKnockback: 19,
+        startup: 0.16,
         angle: -Math.PI * 0.2,
         radius: 1.8,
       }),

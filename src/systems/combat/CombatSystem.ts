@@ -16,12 +16,25 @@ import {
 import { clamp, segmentPointDistance } from '@/core/math';
 import { debug } from '@/core/debug';
 import type { EventBus } from '@/systems/simulation/events';
+import type { AttackData as _AttackData } from '@/core/types';
 import {
   effectiveReach,
   isBusy,
   type ActiveAttack,
   type FighterRuntime,
 } from '@/systems/simulation/FighterRuntime';
+
+/**
+ * True when the victim is protected from this hit by invulnerability. A move
+ * flagged `piercesInvuln` cuts through *dodge* invulnerability (short windows,
+ * ≤ 0.4s) so it can't be rolled through — but never through the long spawn
+ * invulnerability, so respawns stay safe.
+ */
+function isInvulnerableTo(victim: FighterRuntime, attack: _AttackData): boolean {
+  if (victim.invuln <= 0) return false;
+  if (attack.piercesInvuln && victim.invuln <= 0.4) return false;
+  return true;
+}
 
 /** Attempt to begin an attack of the given kind. Returns true if it started. */
 export function tryStartAttack(f: FighterRuntime, kind: AttackKind): boolean {
@@ -114,7 +127,7 @@ export function resolveAttackHits(
     for (const victim of others) {
       if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
       if (attack.hitLog.has(victim.config.id)) continue;
-      if (victim.invuln > 0 || !victim.grounded) continue;
+      if (isInvulnerableTo(victim, attack.data) || !victim.grounded) continue;
       attack.hitLog.set(victim.config.id, attack.elapsed);
       applyHit(attacker, victim, attack.data, events);
     }
@@ -140,7 +153,7 @@ export function resolveAttackHits(
       if (interval === undefined) continue;
       if (attack.elapsed - last < interval) continue;
     }
-    if (victim.invuln > 0) continue;
+    if (isInvulnerableTo(victim, attack.data)) continue;
 
     const d = segmentPointDistance(victim.pos, origin, tip);
     if (d > attack.data.radius + VICTIM_BODY_RADIUS) continue;
