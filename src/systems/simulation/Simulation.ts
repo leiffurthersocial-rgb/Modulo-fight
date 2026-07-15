@@ -288,6 +288,23 @@ export class Simulation {
     }
 
     const inHitstun = f.hitstun > 0;
+
+    // --- Ultimate (always available when charged) ----------------------------
+    // Handled before the `canAct` gate so a full meter fires on demand even
+    // mid-attack, mid-dash/dodge or while shielding — it simply cancels that
+    // action. Only hitstun (handled inside tryStartAttack) keeps it locked, so
+    // a charged ultimate never silently ignores the button.
+    if (input.ultimate && !inHitstun) {
+      if (tryStartAttack(f, 'ultimate')) {
+        this.events.emit({ type: 'ultimate', pos: { ...f.pos }, fighterId: f.config.id });
+        // Self-buff ultimates (Leif's Overdrive) grant haste on cast.
+        const haste = f.config.attacks.ultimate.hasteSelf;
+        if (haste) f.haste = haste.duration;
+      }
+    }
+
+    // Recompute after the ultimate: if one just started, the fighter is now
+    // busy and shouldn't also shield/dash/attack this step.
     const canAct = !inHitstun && !isBusy(f);
 
     // --- Discrete actions ---------------------------------------------------
@@ -296,14 +313,7 @@ export class Simulation {
       if (!f.shielding) {
         if (input.dodge) this.startDodge(f, input);
         else if (input.dash) this.startDash(f);
-        else if (input.ultimate) {
-          if (tryStartAttack(f, 'ultimate')) {
-            this.events.emit({ type: 'ultimate', pos: { ...f.pos }, fighterId: f.config.id });
-            // Self-buff ultimates (Leif's Overdrive) grant haste on cast.
-            const haste = f.config.attacks.ultimate.hasteSelf;
-            if (haste) f.haste = haste.duration;
-          }
-        } else if (input.special) {
+        else if (input.special) {
           if (tryStartAttack(f, 'special')) this.events.emit({ type: 'special', pos: { ...f.pos }, fighterId: f.config.id });
         } else if (input.heavy) {
           if (tryStartAttack(f, 'heavy')) this.events.emit({ type: 'attack', pos: { ...f.pos }, kind: 'heavy' });

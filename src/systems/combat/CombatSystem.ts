@@ -38,11 +38,21 @@ function isInvulnerableTo(victim: FighterRuntime, attack: _AttackData): boolean 
 
 /** Attempt to begin an attack of the given kind. Returns true if it started. */
 export function tryStartAttack(f: FighterRuntime, kind: AttackKind): boolean {
-  if (isBusy(f) || f.shielding) return false;
   const data = f.config.attacks[kind];
-  const cd = f.cooldowns[data.name] ?? 0;
-  if (cd > 0) return false;
-  if (kind === 'ultimate' && f.ultCharge < 1) return false;
+  if (kind === 'ultimate') {
+    // A fully-charged ultimate is *always* available on demand: it cancels
+    // your own attack, dash, dodge or shield the instant you press it. Only
+    // genuine helplessness (being in hitstun) or being out of the match blocks
+    // it, and it ignores the move's own cooldown — a full charge meter is the
+    // only gate, so a charged ult never silently refuses to fire.
+    if (f.ultCharge < 1) return false;
+    if (f.hitstun > 0 || f.eliminated || f.respawnTimer > 0) return false;
+    f.shielding = false;
+  } else {
+    if (isBusy(f) || f.shielding) return false;
+    const cd = f.cooldowns[data.name] ?? 0;
+    if (cd > 0) return false;
+  }
 
   f.attack = { data, elapsed: 0, hitLog: new Map(), fired: 0 };
   f.state = kind;

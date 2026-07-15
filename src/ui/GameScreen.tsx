@@ -108,7 +108,12 @@ export function GameScreen() {
   }, [keyboard]);
 
   const endFrame = useCallback(() => {
-    keyboard.endFrame();
+    // Only clear key edges once a simulation sub-step has actually consumed
+    // them. On very high-refresh displays a render frame can run zero fixed
+    // sub-steps (accumulator < one tick); clearing regardless would silently
+    // drop that frame's presses — e.g. an ultimate that "didn't come out".
+    // Holding the edge until it's consumed makes every press register.
+    if (consumedRef.current) keyboard.endFrame();
   }, [keyboard]);
 
   // Attach keyboard + audio for the lifetime of the match.
@@ -143,6 +148,14 @@ export function GameScreen() {
       sim.resume();
     }
   }, [debugOpen, sim]);
+
+  // A real pause silences the music too — the simulation already freezes (its
+  // status gate stops `advance`), and the render loop is frozen below, so
+  // stopping the soundtrack is what completes the "everything stops" feel.
+  useEffect(() => {
+    if (paused) audioManager.stopMusic();
+    else audioManager.startMusic();
+  }, [paused]);
 
   // Auto-pause when the tab loses focus or is hidden, so a match never keeps
   // running (and draining battery) unattended.
@@ -198,6 +211,11 @@ export function GameScreen() {
   return (
     <div className="app">
       <Canvas
+        // Freeze the entire render loop while paused: this halts every
+        // per-frame animation (fighters, arena decor, particles, camera) as
+        // well as the simulation, so a pause reads as a true, total freeze —
+        // not just the fighters stopping while the world keeps drifting.
+        frameloop={paused ? 'demand' : 'always'}
         shadows={effectiveQuality !== 'low'}
         dpr={batterySaver ? 0.75 : effectiveQuality === 'high' ? [1, 2] : [1, 1.5]}
         gl={{ antialias: effectiveQuality === 'high', powerPreference: batterySaver ? 'low-power' : 'high-performance' }}
