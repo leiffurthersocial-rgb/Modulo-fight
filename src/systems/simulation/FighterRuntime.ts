@@ -85,6 +85,13 @@ export interface FighterRuntime {
   /** Cosmetic: intensity 0..1 for ultimate glow. */
   ultCharge: number;
 
+  /**
+   * Seconds of "overdrive" haste remaining (Leif's Overdrive ultimate). While
+   * > 0 the fighter's attack timeline and cooldowns advance faster and they
+   * move faster — the multipliers are read from the ult's `hasteSelf` config.
+   */
+  haste: number;
+
   /** Practice/debug: immune to knockback and launch (combo practice). */
   immovable: boolean;
 
@@ -133,6 +140,7 @@ export function createFighterRuntime(
     hitFlash: 0,
     landSpeed: 0,
     ultCharge: 0,
+    haste: 0,
     immovable: false,
     totalDamageDealt: 0,
     totalDamageTaken: 0,

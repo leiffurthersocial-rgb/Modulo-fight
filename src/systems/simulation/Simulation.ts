@@ -228,7 +228,7 @@ export class Simulation {
 
     // 3. Resolve combat after everyone has moved (order-independent hits).
     for (const f of this.fighters) {
-      resolveAttackHits(f, this.fighters, this.events, dt);
+      resolveAttackHits(f, this.fighters, this.events);
     }
 
     // 3b. Projectiles: fire pending bolts, then fly + collide.
@@ -267,11 +267,16 @@ export class Simulation {
     if (f.hitFlash > 0) f.hitFlash = Math.max(0, f.hitFlash - dt);
     if (f.actionTimer > 0) f.actionTimer = Math.max(0, f.actionTimer - dt);
     if (f.wasHitRecently > 0) f.wasHitRecently = Math.max(0, f.wasHitRecently - dt);
+    if (f.haste > 0) f.haste = Math.max(0, f.haste - dt);
+
+    // Overdrive haste: attack frames and cooldowns tick faster, so hasted
+    // fighters throw out attacks about `attackSpeed`× as quickly.
+    const atkDt = f.haste > 0 ? dt * (f.config.attacks.ultimate.hasteSelf?.attackSpeed ?? 1) : dt;
     for (const k of Object.keys(f.cooldowns)) {
-      if (f.cooldowns[k] > 0) f.cooldowns[k] = Math.max(0, f.cooldowns[k] - dt);
+      if (f.cooldowns[k] > 0) f.cooldowns[k] = Math.max(0, f.cooldowns[k] - atkDt);
     }
     updateCombo(f, dt);
-    updateAttack(f, dt);
+    updateAttack(f, atkDt);
 
     // Slow passive ultimate charge so ults are always eventually reachable.
     // Per-fighter rate: strong ults charge slower, modest ults faster.
@@ -292,8 +297,12 @@ export class Simulation {
         if (input.dodge) this.startDodge(f, input);
         else if (input.dash) this.startDash(f);
         else if (input.ultimate) {
-          if (tryStartAttack(f, 'ultimate'))
+          if (tryStartAttack(f, 'ultimate')) {
             this.events.emit({ type: 'ultimate', pos: { ...f.pos }, fighterId: f.config.id });
+            // Self-buff ultimates (Leif's Overdrive) grant haste on cast.
+            const haste = f.config.attacks.ultimate.hasteSelf;
+            if (haste) f.haste = haste.duration;
+          }
         } else if (input.special) {
           if (tryStartAttack(f, 'special')) this.events.emit({ type: 'special', pos: { ...f.pos }, fighterId: f.config.id });
         } else if (input.heavy) {

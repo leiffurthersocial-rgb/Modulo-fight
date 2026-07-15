@@ -103,23 +103,9 @@ export function resolveAttackHits(
   attacker: FighterRuntime,
   others: FighterRuntime[],
   events: EventBus,
-  dt: number,
 ): void {
   const attack = attacker.attack;
   if (!attack || !attackHitboxActive(attack)) return;
-
-  // Vacuum ultimates (Leif's Hurricane Combo) drag nearby foes into the
-  // whirlwind while the hitbox is live, so the multi-hit actually traps.
-  if (attack.data.vacuum) {
-    for (const victim of others) {
-      if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
-      if (victim.invuln > 0 || victim.immovable) continue;
-      const dx = attacker.pos.x - victim.pos.x;
-      if (Math.abs(dx) < 5 && Math.abs(dx) > 0.3) {
-        victim.vel.x += Math.sign(dx) * 26 * dt;
-      }
-    }
-  }
 
   // Seismic ultimates (Leonidas's Earthquake) strike every grounded opponent
   // anywhere on the stage — the only escape is to be airborne.

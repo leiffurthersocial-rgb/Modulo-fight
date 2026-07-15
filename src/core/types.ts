@@ -132,8 +132,6 @@ export interface AttackData {
   surge?: boolean;
   /** The attacker rises upward during the move (aerial carry ultimates). */
   riseSelf?: boolean;
-  /** Nearby foes are pulled toward the attacker while the hitbox is active. */
-  vacuum?: boolean;
   /** Hits every *grounded* opponent anywhere on the stage (seismic wave). */
   quake?: boolean;
   /**
@@ -155,6 +153,21 @@ export interface AttackData {
     speed: number;
     /** Seconds between consecutive bolts. */
     interval: number;
+  };
+  /**
+   * A pure self-buff ultimate (no hitbox): on cast the attacker enters an
+   * "overdrive" state for `duration` seconds during which their attacks come
+   * out `attackSpeed`× faster (cooldowns and attack frames advance faster) and
+   * they move `moveSpeed`× faster. Set the move's `active` to 0 so it never
+   * spawns a damaging hitbox — the payoff is entirely the buff.
+   */
+  hasteSelf?: {
+    /** Seconds the haste lasts. */
+    duration: number;
+    /** Attack-timeline speed multiplier while hasted (2 = double hitspeed). */
+    attackSpeed: number;
+    /** Ground/air movement-speed multiplier while hasted. */
+    moveSpeed: number;
   };
 }
 

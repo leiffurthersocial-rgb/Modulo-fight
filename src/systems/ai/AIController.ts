@@ -233,11 +233,15 @@ export class AIController {
       const special = self.config.attacks.special;
       const ult = self.config.attacks.ultimate;
       // Ultimate logic knows each ult's character: fire a curse (Jovan) or a
-      // quake (Leonidas, while the target is grounded) whenever it will land;
-      // otherwise save ultimates for kill percent.
+      // quake (Leonidas, while the target is grounded) whenever it will land,
+      // pop a self-haste buff (Leif) the moment it's up and there's pressure to
+      // apply; otherwise save damaging ultimates for kill percent.
       const wantUlt =
         self.ultCharge >= 1 &&
-        (target.damage > 45 || ult.piercesInvuln || (!!ult.quake && target.grounded));
+        (target.damage > 45 ||
+          ult.piercesInvuln ||
+          !!ult.hasteSelf ||
+          (!!ult.quake && target.grounded));
       if (wantUlt && Math.random() < profile.abilityUse) {
         input.ultimate = true;
       } else if ((self.cooldowns[special.name] ?? 0) <= 0 && Math.random() < profile.abilityUse) {

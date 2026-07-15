@@ -37,7 +37,9 @@ export function integrateMovement(
   if (canAct && !f.shielding) {
     const runSpeedBonus = f.config.passive === 'runSpeed' ? 1.12 : 1;
     const sprint = input.sprint ? SPRINT_MULTIPLIER : 1;
-    const targetVx = input.moveX * stats.speed * runSpeedBonus * sprint;
+    // Overdrive haste (Leif) boosts movement speed while active.
+    const haste = f.haste > 0 ? (f.config.attacks.ultimate.hasteSelf?.moveSpeed ?? 1) : 1;
+    const targetVx = input.moveX * stats.speed * runSpeedBonus * sprint * haste;
     // Air control varies per fighter (acrobats steer hard, heavies drift).
     const airAccel = AIR_ACCEL * (stats.airControl ?? 1);
     const accel = f.grounded ? GROUND_ACCEL : airAccel;

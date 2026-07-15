@@ -40,7 +40,7 @@ export type AttackStyle =
   // Signature ultimate choreographies — one per fighter, matching the move's
   // name so what happens on screen is what the tooltip promised.
   | 'rush' // Golden Rush: low, blazing forward flurry
-  | 'hurricane' // Hurricane Combo: multi-revolution vortex
+  | 'overdrive' // Overdrive: a self-buff power-up flourish
   | 'royal' // Glorious Strike: stately decree, then one sweeping blow
   | 'skyward'; // Sky Storm: spiralling ascent
 
@@ -62,7 +62,7 @@ export function deriveAttackStyle(attack: AttackData): AttackStyle {
   const n = attack.name.toLowerCase();
   // Signature ultimates first — exact choreography for exact names.
   if (/golden rush/.test(n)) return 'rush';
-  if (/hurricane/.test(n)) return 'hurricane';
+  if (/overdrive/.test(n)) return 'overdrive';
   if (/glorious/.test(n)) return 'royal';
   if (/sky storm/.test(n)) return 'skyward';
   if (/(kick|dive|kloten|flying|sky)/.test(n)) {
@@ -169,18 +169,20 @@ function attackPose(style: AttackStyle, p: number, time: number, facing: number)
       o.squash = 1 - 0.08 * strike;
       break;
     }
-    case 'hurricane': {
-      // Hurricane Combo: a genuine multi-revolution vortex, one leg flung
-      // out, arms alternating between wide and tucked as it accelerates.
-      const rev = p * p * Math.PI * 7; // accelerating spin
-      o.bodyRotY = facing * rev;
-      const tuck = Math.sin(p * Math.PI); // wide → tucked → wide
-      o.armLeft = 1.9 - tuck * 2.4;
-      o.armRight = -1.9 + tuck * 2.4;
-      o.legRight = -1.3 * tuck;
-      o.legLeft = 0.3 * tuck;
-      o.bodyTilt = 0.25 * tuck;
-      o.bodyY = 0.12 * tuck;
+    case 'overdrive': {
+      // Overdrive: a sharp power-up flourish — Leif drops into a braced crouch,
+      // fists clenched down at his sides as the adrenaline surges, then springs
+      // up onto the balls of his feet, coiled and ready to blitz.
+      const charge = Math.sin(p * Math.PI); // 0 → 1 → 0 over the cast
+      const buzz = Math.sin(time * 45) * 0.18; // high-frequency energy jitter
+      o.bodyY = -0.14 * wind + 0.16 * strike;
+      o.squash = 1 - 0.1 * wind + 0.12 * strike;
+      o.armLeft = 1.0 * charge + buzz;
+      o.armRight = 1.0 * charge - buzz;
+      o.legLeft = -0.18 * charge;
+      o.legRight = 0.18 * charge;
+      o.bodyTilt = 0.1 * charge;
+      o.headTilt = -0.1 * charge;
       break;
     }
     case 'royal': {
