@@ -18,15 +18,21 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
   Jovan, Leonidas, Erim, Emir, Till, Lenni, Tusya).
 - **Percentage-based combat** — no health bars. Damage grows knockback; win by
   ring-out. Double jumps, air attacks, dashing, dodging, shielding, hitstun,
-  multi-hit flurries and combos.
+  multi-hit flurries and combos. Go five seconds without being hit and your
+  percentage slowly bleeds back down, so successfully disengaging is worth
+  something — any hit taken restarts the delay, so it never ticks mid-combo.
 - **Punchy game-feel** — swept-capsule hitboxes so attacks connect along their
   whole arc, impact freeze-frames (hitstop) scaled by power, directional
   influence to survive knockback, accent-tinted hit sparks, shockwave impact
   rings, landing dust, motion streaks, shield domes and a live combo counter.
 - **Readable attacks** — every strike draws a visible swing arc at its real
-  hitbox; ultimates telegraph with a converging ground ring, set the fighter
-  ablaze in their accent colour, blast an outward shock ring and flash the
-  screen — you can't miss one, even zoomed out.
+  hitbox; ultimates telegraph with a converging ground ring, wrap the fighter in
+  a hard-pulsing aura in their accent colour (Leif throbs blue, Tusya red),
+  blast an outward shock ring and flash the screen — you can't miss one, even
+  zoomed out. The two ultimates that hit a whole *region* rather than an arc
+  show that region explicitly: Leonidas's Earthquake lights up the entire
+  ground, Emir's Skyfall the entire airspace, both swelling as a warning during
+  wind-up and flashing on the active frames.
 - **Signature ultimates** — every ultimate has a unique mechanic that matches
   its name and choreography: Robin's Golden Rush surges across the stage in a
   flurry, Leif's Hurricane Combo vacuums foes into a spinning vortex, Jovan's
@@ -62,7 +68,9 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
 - **Deep settings & debug tooling** — camera zoom, particle density, and
   independent toggles for screen flash, battle callouts, the combo counter and
   speed streaks; a reorganised debug menu adds No Cooldowns and Infinite
-  Shield cheats alongside live simulation tuning.
+  Shield cheats alongside live simulation tuning. Opening the debug menu
+  freezes the match, so cheats and tuning are applied to a still frame rather
+  than while fighters keep moving.
 
 ## Controls
 

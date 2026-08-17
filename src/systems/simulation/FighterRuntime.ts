@@ -76,6 +76,12 @@ export interface FighterRuntime {
   /** Whether this fighter took a counter-hit recently (Erim's passive). */
   wasHitRecently: number;
 
+  /**
+   * Seconds since this fighter last took damage. Drives the slow percentage
+   * regeneration that rewards disengaging; reset to 0 by every hit taken.
+   */
+  timeSinceHurt: number;
+
   /** Cosmetic: last-hit flash timer for the renderer. */
   hitFlash: number;
 
@@ -130,6 +136,7 @@ export function createFighterRuntime(
     eliminated: false,
     respawnTimer: 0,
     wasHitRecently: 0,
+    timeSinceHurt: 0,
     hitFlash: 0,
     landSpeed: 0,
     ultCharge: 0,

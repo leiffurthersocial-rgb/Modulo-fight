@@ -231,6 +231,9 @@ export function applyHit(
     aerialHunter && victim.grounded && (attack.kind === 'light' || attack.kind === 'heavy');
 
   victim.damage = clamp(victim.damage + damage, 0, 999);
+  // Taking a hit restarts the regeneration delay, so percentage only ever bleeds
+  // back down after genuinely disengaging.
+  victim.timeSinceHurt = 0;
   // Lifetime stats for post-match balance data — never reset by respawn.
   attacker.totalDamageDealt += damage;
   victim.totalDamageTaken += damage;

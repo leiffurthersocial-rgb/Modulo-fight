@@ -13,6 +13,7 @@ import { FighterView } from './fighter/FighterView';
 import { Particles } from './effects/Particles';
 import { Projectiles } from './effects/Projectiles';
 import { Shockwaves } from './effects/Shockwaves';
+import { StageStrike } from './effects/StageStrike';
 import { HitMarkers } from './effects/HitMarkers';
 import { DebugOverlay } from './effects/DebugOverlay';
 import { Lighting } from './scene/Lighting';
@@ -74,6 +75,10 @@ export function GameScene({
       <ArenaView arena={sim.config.arena} effectsScale={effectsScale} />
 
       <Fighters sim={sim} />
+
+      {/* Hit-area overlays for the two stage-wide ultimates. Not decorative —
+          these are the only attacks whose range the swing arc can't show. */}
+      <StageStrike sim={sim} />
 
       <Particles events={sim.events} maxParticles={Math.max(40, Math.round(260 * effectsScale))} />
       <Projectiles sim={sim} />

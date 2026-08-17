@@ -19,6 +19,8 @@ import {
   HITSTOP_MAX,
   HITSTOP_PER_POWER,
   MAX_STEPS_PER_FRAME,
+  REGEN_DELAY,
+  REGEN_RATE,
   RESPAWN_Y,
   SHIELD_DRAIN,
   SHIELD_MAX,
@@ -267,6 +269,15 @@ export class Simulation {
     if (f.hitFlash > 0) f.hitFlash = Math.max(0, f.hitFlash - dt);
     if (f.actionTimer > 0) f.actionTimer = Math.max(0, f.actionTimer - dt);
     if (f.wasHitRecently > 0) f.wasHitRecently = Math.max(0, f.wasHitRecently - dt);
+
+    // --- Damage regeneration -----------------------------------------------
+    // Go untouched long enough and percentage slowly bleeds back down, so
+    // breaking away from a losing exchange is worth something. Any hit taken
+    // resets the delay (see `applyHit`), so this never ticks mid-combo.
+    f.timeSinceHurt += dt;
+    if (f.timeSinceHurt > REGEN_DELAY && f.damage > 0) {
+      f.damage = Math.max(0, f.damage - REGEN_RATE * dt);
+    }
     for (const k of Object.keys(f.cooldowns)) {
       if (f.cooldowns[k] > 0) f.cooldowns[k] = Math.max(0, f.cooldowns[k] - dt);
     }
@@ -454,6 +465,7 @@ export class Simulation {
     f.hitstun = 0;
     f.attack = null;
     f.comboCount = 0;
+    f.timeSinceHurt = 0;
     f.invuln = SPAWN_INVULN;
     f.respawnTimer = 0.4;
     f.state = 'fall';

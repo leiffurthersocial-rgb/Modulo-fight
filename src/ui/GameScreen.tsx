@@ -136,13 +136,13 @@ export function GameScreen() {
     });
   }, [keyboard, sim]);
 
-  // Opening the debug menu resumes the match so live tuning is visible.
+  // Opening the debug menu freezes the match, so cheats and tuning are applied
+  // to a still frame instead of while fighters keep moving. Closing it hands
+  // control back to whatever is underneath — the pause menu, or a live match.
   useEffect(() => {
-    if (debugOpen) {
-      setPaused(false);
-      sim.resume();
-    }
-  }, [debugOpen, sim]);
+    if (debugOpen) sim.pause();
+    else if (!paused) sim.resume();
+  }, [debugOpen, paused, sim]);
 
   // Auto-pause when the tab loses focus or is hidden, so a match never keeps
   // running (and draining battery) unattended.

@@ -38,6 +38,8 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
   const swingMat = useRef<THREE.MeshBasicMaterial>(null!);
   const ultRing = useRef<THREE.Mesh>(null!);
   const ultRingMat = useRef<THREE.MeshBasicMaterial>(null!);
+  const ultAura = useRef<THREE.Mesh>(null!);
+  const ultAuraMat = useRef<THREE.MeshBasicMaterial>(null!);
   const charRef = useRef<CharacterRefs>(null!);
   const accent = useMemo(() => new THREE.Color(runtime.config.appearance.accent), [runtime]);
   // Slash tint per attack slot: jabs read white-hot, committal moves read in the
@@ -125,9 +127,14 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
     c.legR.rotation.x = pose.legRight;
 
     // --- Material emissive: hit flash > ultimate execution > charged glow --
+    // A live ultimate throbs hard in the fighter's accent — a deep 0→1 pulse
+    // rather than the gentle shimmer of a merely charged meter — so "my
+    // ultimate is happening right now" is unmistakable at any zoom. Leif's
+    // accent makes his read as a pulsing blue, Tusya's as a pulsing red, etc.
     const ultActive = runtime.attack?.data.kind === 'ultimate';
+    const ultPulse = ultActive ? 0.5 + 0.5 * Math.sin(performance.now() / 55) : 0;
     const glow = ultActive
-      ? 1.1 + Math.sin(performance.now() / 60) * 0.35
+      ? 0.85 + ultPulse * 1.3
       : runtime.ultCharge >= 1
         ? 0.4 + Math.sin(performance.now() / 120) * 0.2
         : 0;
@@ -140,6 +147,19 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
         mm.emissiveIntensity = glow;
       } else if (mm.emissiveIntensity !== 0) {
         mm.emissiveIntensity = 0;
+      }
+    }
+
+    // --- Ultimate aura -------------------------------------------------------
+    // A pulsing accent shell wrapped around the fighter for the whole duration
+    // of an ultimate. Drawn back-face-only so the body stays visible through it.
+    if (ultAura.current && ultAuraMat.current) {
+      if (ultActive) {
+        ultAura.current.visible = true;
+        ultAura.current.scale.setScalar(1.15 + ultPulse * 0.4);
+        ultAuraMat.current.opacity = 0.2 + ultPulse * 0.32;
+      } else {
+        ultAura.current.visible = false;
       }
     }
 
@@ -278,6 +298,19 @@ export function FighterView({ runtime, groundY = 0.6 }: Props) {
           opacity={0}
           depthWrite={false}
           toneMapped={false}
+        />
+      </mesh>
+      {/* Ultimate aura — a pulsing accent shell while an ultimate is active. */}
+      <mesh ref={ultAura} visible={false} position={[0, 0.95, 0]}>
+        <sphereGeometry args={[1, 20, 20]} />
+        <meshBasicMaterial
+          ref={ultAuraMat}
+          color={runtime.config.appearance.accent}
+          transparent
+          opacity={0}
+          depthWrite={false}
+          toneMapped={false}
+          side={THREE.BackSide}
         />
       </mesh>
       {/* Attack swing slash — a crescent arc at the live hitbox. */}

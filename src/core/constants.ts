@@ -73,6 +73,19 @@ export const KNOCKBACK_DAMAGE_SCALE = 0.9;
 /** Damage that counts as a decayed combo reset window (seconds). */
 export const COMBO_RESET_TIME = 1.1;
 
+/**
+ * Damage regeneration — after going untouched for `REGEN_DELAY` seconds a
+ * fighter slowly sheds accumulated percentage at `REGEN_RATE` per second.
+ *
+ * This rewards successfully disengaging and softens a runaway snowball, without
+ * ever being a reset: the delay is long enough that it never ticks during an
+ * exchange, and the rate is slow enough that escaping a 120% deficit still
+ * takes far longer than the opponent needs to re-engage. Any hit taken restarts
+ * the delay from zero.
+ */
+export const REGEN_DELAY = 5;
+export const REGEN_RATE = 2;
+
 /** Shield can be held; it slowly leaks so it can't be held forever. */
 export const SHIELD_MAX = 1;
 export const SHIELD_DRAIN = 0.35;

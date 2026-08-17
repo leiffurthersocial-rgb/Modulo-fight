@@ -190,6 +190,39 @@ export class AIController {
       return input;
     }
 
+    // --- Climb to a target on a higher platform -----------------------------
+    // Without this a bot stands on the main stage swinging at nothing while the
+    // player pokes down from a side tile: the normal attack gate needs the
+    // target within 1.6 units of its own height, which never happens from
+    // below. Get underneath, jump onto their level, and swing once there.
+    if (dy > 1.6) {
+      let dir = horizontalDist > 0.7 ? desiredFacing : 0;
+      // Side tiles overhang the main stage, so clamp against the widest solid
+      // span rather than the main platform — far enough to climb, not to
+      // wander into the blast zone.
+      let safeLeft = Infinity;
+      let safeRight = -Infinity;
+      for (const p of arena.platforms) {
+        safeLeft = Math.min(safeLeft, p.x - p.width / 2);
+        safeRight = Math.max(safeRight, p.x + p.width / 2);
+      }
+      if (dir < 0 && self.pos.x < safeLeft + 0.6) dir = 0;
+      if (dir > 0 && self.pos.x > safeRight - 0.6) dir = 0;
+      input.moveX = dir;
+
+      // Jump from the ground once roughly beneath them, and spend a mid-air
+      // jump only at the top of the arc so the climb isn't wasted early.
+      const wantJump = self.grounded ? horizontalDist < range * 2.4 : self.vel.y < 1;
+      if (wantJump && Math.random() < profile.tech * dt * 16) input.jump = true;
+
+      // Near their level now — actually threaten them.
+      if (dy < 2.4 && horizontalDist < range && Math.random() < profile.aggression * dt * 12) {
+        if (target.damage > 60 && Math.random() < 0.5) input.heavy = true;
+        else input.light = true;
+      }
+      return input;
+    }
+
     // --- Re-decide movement periodically -----------------------------------
     mem.timer -= dt;
     if (mem.timer <= 0) {

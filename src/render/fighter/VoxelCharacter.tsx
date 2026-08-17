@@ -146,13 +146,15 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
   // Stature scales it vertically. The group's origin sits at the feet, so this
   // grows the fighter upward — a tall fighter reads as long-limbed rather than
   // sunk into the floor.
+  // Kept deliberately subtle: enough to rank fighters by height at a glance
+  // without any of them reading as oversized next to the rest of the roster.
   const height =
     appearance.stature === 'towering'
-      ? 1.13
+      ? 1.09
       : appearance.stature === 'tall'
-        ? 1.06
+        ? 1.05
         : appearance.stature === 'short'
-          ? 0.93
+          ? 0.95
           : 1;
   const shortSleeves = appearance.sleeves === 'short';
   // A slightly darker skin tone for mouth/nose shading, derived from skin.
