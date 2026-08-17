@@ -42,7 +42,8 @@ export type AttackStyle =
   | 'rush' // Golden Rush: low, blazing forward flurry
   | 'hurricane' // Hurricane Combo: multi-revolution vortex
   | 'royal' // Glorious Strike: stately decree, then one sweeping blow
-  | 'skyward'; // Sky Storm: spiralling ascent
+  | 'skyward' // Sky Storm: spiralling ascent
+  | 'talon'; // Skyfall: a coiled leap into a raking overhead sweep
 
 const IDLE: Pose = {
   bodyY: 0,
@@ -65,6 +66,7 @@ export function deriveAttackStyle(attack: AttackData): AttackStyle {
   if (/hurricane/.test(n)) return 'hurricane';
   if (/glorious/.test(n)) return 'royal';
   if (/sky storm/.test(n)) return 'skyward';
+  if (/skyfall/.test(n)) return 'talon';
   if (/(kick|dive|kloten|flying|sky)/.test(n)) {
     return /(dive|kloten|sky|meteor)/.test(n) ? 'dive' : 'kick';
   }
@@ -205,6 +207,21 @@ function attackPose(style: AttackStyle, p: number, time: number, facing: number)
       o.legRight = 1.0;
       o.bodyTilt = 0.15;
       o.squash = 1.06;
+      break;
+    }
+    case 'talon': {
+      // Skyfall: coil down low, then unfold into a tall raking sweep — both
+      // arms scything overhead while a trailing leg whips up behind, so the
+      // strike reads as clawing everything out of the air above him.
+      o.bodyY = -0.2 * wind + 0.3 * strike;
+      o.squash = 1 - 0.14 * wind + 0.16 * strike;
+      o.armRight = 1.0 * wind - 3.2 * strike + 1.1 * recover;
+      o.armLeft = 0.7 * wind - 2.7 * strike + 0.9 * recover;
+      o.legRight = 0.5 * wind - 1.8 * strike;
+      o.legLeft = -0.4 * strike;
+      o.bodyRotY = facing * (0.35 * wind - Math.PI * 0.45 * strike);
+      o.bodyTilt = 0.2 * wind - 0.42 * strike;
+      o.headTilt = -0.2 * strike;
       break;
     }
     case 'lunge':

@@ -147,6 +147,12 @@ export interface AttackData {
    * safe). Makes an ultimate "impossible to dodge".
    */
   piercesInvuln?: boolean;
+  /**
+   * The mirror of `quake`: hits every *airborne* opponent anywhere on the stage
+   * (a stage-wide rake of the sky). The only escape is to keep your feet on the
+   * ground — where `quake` punishes standing still, this punishes floating.
+   */
+  skyhunt?: boolean;
   /** Fires a volley of projectiles instead of relying on the melee hitbox. */
   projectiles?: {
     /** Number of bolts fired over the active window. */
@@ -167,7 +173,8 @@ export type PassiveId =
   | 'counterForce'
   | 'tripleJump'
   | 'precision'
-  | 'heavyStun';
+  | 'heavyStun'
+  | 'aerialHunter';
 
 /** Voxel character appearance description. */
 export interface FighterAppearance {
@@ -192,6 +199,12 @@ export interface FighterAppearance {
   shoes?: string;
   /** Body build — scales the silhouette's bulk (defaults to 'normal'). */
   build?: 'lean' | 'normal' | 'heavy';
+  /**
+   * Body height — scales the silhouette vertically (defaults to 'normal'), so a
+   * fighter can read as tall and long-limbed at a glance. Purely cosmetic: the
+   * hurtbox is a shared constant, exactly like `build` leaves the width alone.
+   */
+  stature?: 'short' | 'normal' | 'tall';
   /** Optional headband colour (worn across the forehead). */
   headband?: string;
   /** Optional scarf colour (worn around the neck). */
@@ -206,6 +219,8 @@ export interface FighterAppearance {
   backpack?: string;
   /** Optional knee-pad colour. */
   kneePads?: string;
+  /** Optional forearm wrap colour (fighter's tape wound up the forearms). */
+  armWraps?: string;
   /** Optional glowing chest pendant (accent-coloured, emissive). */
   pendant?: boolean;
   /** Optional royal crown worn on the head (gold band, prongs and jewels). */

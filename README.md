@@ -5,17 +5,17 @@ Super Smash Bros. Knock your opponents off floating arenas, rack up their damage
 percentage, and send them flying past the blast zone. Built to run smoothly at
 60 FPS on laptops and iPads (with an external keyboard) in any modern browser.
 
-![Sky Temple arena](https://img.shields.io/badge/arena-Sky%20Temple-7fce7a) ![Fighters](https://img.shields.io/badge/fighters-8-5ad1ff) ![60 FPS](https://img.shields.io/badge/target-60%20FPS-6affb0)
+![Sky Temple arena](https://img.shields.io/badge/arena-Sky%20Temple-7fce7a) ![Fighters](https://img.shields.io/badge/fighters-9-5ad1ff) ![60 FPS](https://img.shields.io/badge/target-60%20FPS-6affb0)
 
 ## Features
 
-- **8 unique fighters** — each with distinct stats, a passive, a special, an
-  ultimate, a signature silhouette (capes, gloves, pauldrons, tech packs) _and
-  a distinct aerial identity_ (floaty acrobats, nimble speedsters, brick-like
-  heavies) driven by per-fighter air control and gravity. Erim's special,
-  Syphon Pulse, drains a capped fraction of the damage he deals back into his
-  own percentage — a sustain tool, not a reset (Robin, Leif, Jovan, Leonidas,
-  Erim, Till, Lenni, Tusya).
+- **9 unique fighters** — each with distinct stats, a passive, a special, an
+  ultimate, a signature silhouette (capes, gloves, pauldrons, tech packs, build
+  _and height_) _and a distinct aerial identity_ (floaty acrobats, nimble
+  speedsters, brick-like heavies) driven by per-fighter air control and gravity.
+  Erim's special, Syphon Pulse, drains a capped fraction of the damage he deals
+  back into his own percentage — a sustain tool, not a reset (Robin, Leif,
+  Jovan, Leonidas, Erim, Emir, Till, Lenni, Tusya).
 - **Percentage-based combat** — no health bars. Damage grows knockback; win by
   ring-out. Double jumps, air attacks, dashing, dodging, shielding, hitstun,
   multi-hit flurries and combos.
@@ -32,9 +32,11 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
   flurry, Leif's Hurricane Combo vacuums foes into a spinning vortex, Jovan's
   Glorious Strike curses its victim with +100% damage but no launch,
   Leonidas's Earthquake erupts every grounded opponent stage-wide, Erim's
-  Laser Barrage fires a volley of real projectiles, Till's Sky Storm spirals
-  upward carrying anyone he clips, Lenni's Kloten Kick is a leaping shockwave
-  dive, and Tusya's Meteor Smash spikes foes into the ground.
+  Laser Barrage fires a volley of real projectiles, Emir's Skyfall rakes the
+  whole sky and strikes down every *airborne* opponent at any distance (the
+  exact mirror of the Earthquake — stay grounded or be hunted), Till's Sky Storm
+  spirals upward carrying anyone he clips, Lenni's Kloten Kick is a leaping
+  shockwave dive, and Tusya's Meteor Smash spikes foes into the ground.
 - **Dynamic arena camera** — Smash-style auto-zoom that always keeps every
   fighter framed, with cinematic smoothing and impact shake.
 - **Human-like AI** — four difficulty tiers (Easy → Insane) that approach,

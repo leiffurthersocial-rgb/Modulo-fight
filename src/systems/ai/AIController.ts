@@ -113,6 +113,14 @@ export class AIController {
         input.moveX = -desiredFacing;
         return input;
       }
+      if (data.skyhunt) {
+        // The mirror of the quake: only the grounded survive. Airborne bots
+        // have nothing to hide behind but a dodge; grounded bots must resist
+        // the usual urge to jump and simply back away.
+        if (!self.grounded && Math.random() < profile.tech * dt * 30) input.dodge = true;
+        input.moveX = -desiredFacing;
+        return input;
+      }
       if (data.piercesInvuln) {
         // Can't dodge it — put distance between us before the strike lands.
         input.moveX = -desiredFacing;
@@ -169,6 +177,19 @@ export class AIController {
     // --- Jump to reach airborne / higher targets ---------------------------
     if (dy > 1.5 && horizontalDist < range * 2.5 && Math.random() < profile.tech * dt * 8) {
       input.jump = true;
+    }
+
+    // --- Stage-wide ultimates ignore melee range ----------------------------
+    // Emir's Skyfall rakes the whole sky, so waiting to be nose-to-nose would
+    // waste it: fire the instant the target leaves the ground, at any distance.
+    if (
+      self.ultCharge >= 1 &&
+      self.config.attacks.ultimate.skyhunt &&
+      !target.grounded &&
+      Math.random() < profile.abilityUse * dt * 14
+    ) {
+      input.ultimate = true;
+      return input;
     }
 
     // --- Attacks -----------------------------------------------------------

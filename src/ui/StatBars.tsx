@@ -28,6 +28,19 @@ const STAT_DEFS: StatDef[] = [
     get: (f) =>
       (f.stats.airControl ?? 1) + (1 - (f.stats.gravityMul ?? 1)) + f.extraJumps * 0.15,
   },
+  {
+    label: 'Reach',
+    color: '#ffd54a',
+    // Average hitbox reach across the four slots, plus the reach passive's flat
+    // bonus — the same numbers the combat system actually uses.
+    get: (f) =>
+      (f.attacks.light.reach +
+        f.attacks.heavy.reach +
+        f.attacks.special.reach +
+        f.attacks.ultimate.reach) /
+        4 +
+      (f.passive === 'reach' ? 0.5 : 0),
+  },
   { label: 'Defense', color: '#b58cff', get: (f) => f.stats.knockbackResist },
 ];
 

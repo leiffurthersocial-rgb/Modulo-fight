@@ -143,6 +143,11 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
   // Build scales the silhouette's bulk: heavies read broad, speedsters slight.
   const bulk =
     appearance.build === 'heavy' ? 1.16 : appearance.build === 'lean' ? 0.9 : 1;
+  // Stature scales it vertically. The group's origin sits at the feet, so this
+  // grows the fighter upward — a tall fighter reads as long-limbed rather than
+  // sunk into the floor.
+  const height =
+    appearance.stature === 'tall' ? 1.09 : appearance.stature === 'short' ? 0.93 : 1;
   // A slightly darker skin tone for mouth/nose shading, derived from skin.
   const shade = useMemo(() => {
     const c = new THREE.Color(appearance.skin);
@@ -151,7 +156,7 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
   }, [appearance.skin]);
 
   return (
-    <group scale={[bulk, 1, bulk]}>
+    <group scale={[bulk, height, bulk]}>
       {/* Legs (pivot at hip, extend downward). */}
       {[-1, 1].map((side) => (
         <group key={side} ref={side < 0 ? legL : legR} position={[side * 0.16, 0.55, 0]}>
@@ -185,6 +190,10 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
           <group key={side} ref={side < 0 ? armL : armR} position={[side * 0.4, 0.55, 0]}>
             <Box args={[0.18, 0.46, 0.2]} position={[0, -0.22, 0]} color={appearance.shirt} matRef={collect} />
             <Box args={[0.18, 0.16, 0.2]} position={[0, -0.45, 0]} color={appearance.skin} matRef={collect} />
+            {/* Optional forearm wraps, drawn over the bare forearm. */}
+            {appearance.armWraps && (
+              <Box args={[0.2, 0.2, 0.22]} position={[0, -0.44, 0]} color={appearance.armWraps} matRef={collect} roughness={0.8} />
+            )}
             <Box args={[0.2, 0.06, 0.22]} position={[0, -0.55, 0]} color={appearance.accent} matRef={collect} />
             {appearance.gloves ? (
               <Box args={[0.26, 0.24, 0.28]} position={[0, -0.69, 0.02]} color={appearance.gloves} matRef={collect} />

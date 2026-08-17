@@ -9,7 +9,8 @@
  * Beyond raw stats, fighters differ in *mobility feel* via optional
  * `airControl` and `gravityMul`: acrobats (Till) float and steer hard in the
  * air, speedsters (Leif) are nimble, and heavies (Leonidas, Tusya) fast-fall
- * and drift like bricks. Every fighter's jump is tuned so a double jump can
+ * and drift like bricks. Silhouette follows suit via `build` and `stature`, so
+ * a lean giant (Emir) is recognisable next to a stocky bruiser at any zoom. Every fighter's jump is tuned so a double jump can
  * reach every platform on every stage — verified against the arena layouts.
  *
  * The central balance lever is `ultChargeRate`: a fighter's ultimate power is
@@ -334,6 +335,84 @@ export const FIGHTERS: FighterConfig[] = [
         reach: 0.8,
         radius: 0.4,
         angle: Math.PI * 0.08,
+      }),
+    },
+  },
+  {
+    id: 'emir',
+    name: 'Emir',
+    role: 'Skyhunter',
+    emoji: '🦅',
+    blurb: 'Tall, long-limbed and lethal above ground level — leave the floor and you are prey.',
+    personality: 'Cool, unhurried, fights like he already knows the ending.',
+    passive: 'aerialHunter',
+    passiveDescription:
+      'Hits on an airborne opponent deal +18% damage and +30% knockback — his juggles and edgeguards kill early.',
+    extraJumps: 1,
+    ultChargeRate: 0.85,
+    stats: {
+      speed: 6.8, weight: 0.92, strength: 0.95, jumpHeight: 17.6, knockbackResist: 0.02,
+      airControl: 1.15, gravityMul: 0.95,
+    },
+    appearance: {
+      skin: '#f7d8bb',
+      hair: '#101014',
+      hairStyle: 'medium',
+      eyes: '#6b4423',
+      shirt: '#15161c',
+      pants: '#22242e',
+      shoes: '#0e0f14',
+      build: 'lean',
+      stature: 'tall',
+      // A long coat a shade warmer than the shirt, so the silhouette layers
+      // instead of reading as one black block.
+      cape: '#2b2233',
+      armWraps: '#4a3d54',
+      gloves: '#0f1014',
+      pendant: true,
+      goatee: true,
+      accent: '#ff4fc3',
+    },
+    attacks: {
+      light: makeAttack('light', {
+        name: 'Lance Jab',
+        description: 'A long, straight-armed poke that out-ranges most jabs.',
+        startup: 0.07,
+        reach: 1.45,
+      }),
+      heavy: makeAttack('heavy', {
+        name: 'Crescent Kick',
+        description: 'A tall arcing kick that pops foes off the ground and into his passive.',
+        reach: 1.75,
+        angle: Math.PI * 0.3,
+        startup: 0.18,
+      }),
+      special: makeAttack('special', {
+        name: 'Rising Talon',
+        description:
+          'A soaring anti-air kick that launches almost straight up — his own set-up for the hunt.',
+        damage: 9,
+        baseKnockback: 6.5,
+        knockbackScaling: 0.22,
+        angle: Math.PI * 0.47,
+        reach: 1.85,
+        cooldown: 1.7,
+      }),
+      ultimate: makeAttack('ultimate', {
+        name: 'Skyfall',
+        description:
+          'Emir leaps and rakes the entire sky — every airborne opponent is struck down wherever they are, however far away. Keep your feet on the ground or be hunted.',
+        damage: 24,
+        skyhunt: true,
+        startup: 0.3,
+        active: 0.26,
+        recovery: 0.55,
+        baseKnockback: 15,
+        knockbackScaling: 0.46,
+        angle: Math.PI * 0.06,
+        reach: 2.35,
+        radius: 1.6,
+        cooldown: 13,
       }),
     },
   },

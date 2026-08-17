@@ -56,8 +56,13 @@ export function tryStartAttack(f: FighterRuntime, kind: AttackKind): boolean {
   }
   if (kind === 'ultimate') {
     f.vel.x += f.facing * 3.5;
-    if (f.config.attacks.ultimate.angle > Math.PI * 0.4 || f.config.id === 'lenni') {
-      // Skyward launch for divekick-style ultimates (e.g. Lenni's Kloten Kick).
+    if (
+      f.config.attacks.ultimate.angle > Math.PI * 0.4 ||
+      f.config.attacks.ultimate.skyhunt ||
+      f.config.id === 'lenni'
+    ) {
+      // Skyward launch for divekick-style ultimates (e.g. Lenni's Kloten Kick)
+      // and sky-hunts (Emir leaps to rake the air).
       f.vel.y += 6;
     }
   }
@@ -134,6 +139,20 @@ export function resolveAttackHits(
     return; // The quake IS the hitbox — skip the melee capsule.
   }
 
+  // Sky-hunt ultimates (Emir's Skyfall) are the exact mirror: they rake the
+  // whole sky, striking every *airborne* opponent at any distance. Staying
+  // grounded is the only way out.
+  if (attack.data.skyhunt) {
+    for (const victim of others) {
+      if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
+      if (attack.hitLog.has(victim.config.id)) continue;
+      if (isInvulnerableTo(victim, attack.data) || victim.grounded) continue;
+      attack.hitLog.set(victim.config.id, attack.elapsed);
+      applyHit(attacker, victim, attack.data, events);
+    }
+    return; // The sky rake IS the hitbox — skip the melee capsule.
+  }
+
   const reach = effectiveReach(attacker, attack.data);
   // Swept-capsule hitbox: a segment from just in front of the torso out to the
   // attack's reach tip, thickened by the move's radius. Testing the whole
@@ -191,6 +210,10 @@ export function applyHit(
   // bonus damage (and bonus knockback below).
   const counterHit = attacker.config.passive === 'counterForce' && !!victim.attack;
   if (counterHit) damage *= 1.2;
+  // Emir: an opponent with no ground under them is prey — juggles and
+  // edgeguards bite harder (bonus knockback applied below too).
+  const airborneHit = attacker.config.passive === 'aerialHunter' && !victim.grounded;
+  if (airborneHit) damage *= 1.18;
 
   victim.damage = clamp(victim.damage + damage, 0, 999);
   // Lifetime stats for post-match balance data — never reset by respawn.
@@ -223,6 +246,11 @@ export function applyHit(
   // Erim: counter-hitting a fighter who is mid-attack adds knockback.
   if (counterHit) {
     kb *= 1.32;
+  }
+  // Emir: airborne victims get launched considerably further — once he puts you
+  // off the ground, every follow-up carries you closer to the blast zone.
+  if (airborneHit) {
+    kb *= 1.3;
   }
   // Debug: global knockback scaling.
   kb *= debug.knockbackScale;
