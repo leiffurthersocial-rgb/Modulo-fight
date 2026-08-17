@@ -147,7 +147,14 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
   // grows the fighter upward — a tall fighter reads as long-limbed rather than
   // sunk into the floor.
   const height =
-    appearance.stature === 'tall' ? 1.09 : appearance.stature === 'short' ? 0.93 : 1;
+    appearance.stature === 'towering'
+      ? 1.13
+      : appearance.stature === 'tall'
+        ? 1.06
+        : appearance.stature === 'short'
+          ? 0.93
+          : 1;
+  const shortSleeves = appearance.sleeves === 'short';
   // A slightly darker skin tone for mouth/nose shading, derived from skin.
   const shade = useMemo(() => {
     const c = new THREE.Color(appearance.skin);
@@ -185,10 +192,19 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
         )}
 
         {/* Arms (pivot at shoulder). Gloves swap the bare fists for chunkier
-            padded ones — an instantly readable brawler silhouette. */}
+            padded ones — an instantly readable brawler silhouette. Short
+            sleeves cut the shirt to a cap at the shoulder and leave the rest of
+            the arm bare, reading clearly as a t-shirt. */}
         {[-1, 1].map((side) => (
           <group key={side} ref={side < 0 ? armL : armR} position={[side * 0.4, 0.55, 0]}>
-            <Box args={[0.18, 0.46, 0.2]} position={[0, -0.22, 0]} color={appearance.shirt} matRef={collect} />
+            {shortSleeves ? (
+              <>
+                <Box args={[0.21, 0.17, 0.23]} position={[0, -0.07, 0]} color={appearance.shirt} matRef={collect} />
+                <Box args={[0.18, 0.31, 0.2]} position={[0, -0.31, 0]} color={appearance.skin} matRef={collect} />
+              </>
+            ) : (
+              <Box args={[0.18, 0.46, 0.2]} position={[0, -0.22, 0]} color={appearance.shirt} matRef={collect} />
+            )}
             <Box args={[0.18, 0.16, 0.2]} position={[0, -0.45, 0]} color={appearance.skin} matRef={collect} />
             {/* Optional forearm wraps, drawn over the bare forearm. */}
             {appearance.armWraps && (
@@ -326,9 +342,21 @@ export const VoxelCharacter = forwardRef<CharacterRefs, Props>(function VoxelCha
               <Box args={[0.1, 0.03, 0.03]} position={[0, 0.01, 0.3]} color={'#101014'} matRef={collect} />
             </>
           )}
-          {/* Optional goatee. */}
+          {/* Optional goatee — a full circle beard: moustache above the mouth,
+              two jaw strips framing it, and a chin tuft that hangs just past
+              the jawline so the beard reads at gameplay zoom and in
+              silhouette, not just in a close-up. */}
           {appearance.goatee && (
-            <Box args={[0.18, 0.14, 0.06]} position={[0, -0.29, 0.22]} color={appearance.hair} matRef={collect} />
+            <>
+              {/* Moustache, tucked between the nose and the mouth. */}
+              <Box args={[0.25, 0.06, 0.08]} position={[0, -0.175, 0.24]} color={appearance.hair} matRef={collect} />
+              {/* Jaw strips connecting moustache to chin on both sides. */}
+              {[-0.135, 0.135].map((x) => (
+                <Box key={x} args={[0.06, 0.17, 0.09]} position={[x, -0.25, 0.23]} color={appearance.hair} matRef={collect} />
+              ))}
+              {/* Chin tuft, extending below the jaw for a clear silhouette. */}
+              <Box args={[0.27, 0.17, 0.11]} position={[0, -0.31, 0.22]} color={appearance.hair} matRef={collect} />
+            </>
           )}
         </group>
       </group>

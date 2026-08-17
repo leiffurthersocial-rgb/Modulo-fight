@@ -170,6 +170,8 @@ export const FIGHTERS: FighterConfig[] = [
       shoes: '#25352a',
       build: 'normal',
       cape: '#1f3a2a',
+      // The tallest fighter on the roster — his reach reads in the silhouette.
+      stature: 'towering',
       crown: true,
       shoulderPads: '#d4af37',
       accent: '#8affc1',
@@ -343,11 +345,11 @@ export const FIGHTERS: FighterConfig[] = [
     name: 'Emir',
     role: 'Skyhunter',
     emoji: '🦅',
-    blurb: 'Tall, long-limbed and lethal above ground level — leave the floor and you are prey.',
+    blurb: 'Tall and long-limbed — his normals scoop foes off the floor, then punish them for being there.',
     personality: 'Cool, unhurried, fights like he already knows the ending.',
     passive: 'aerialHunter',
     passiveDescription:
-      'Hits on an airborne opponent deal +18% damage and +30% knockback — his juggles and edgeguards kill early.',
+      'His jab and heavy lift a grounded foe off their feet — and every hit on an airborne opponent then deals +18% damage and +30% knockback.',
     extraJumps: 1,
     ultChargeRate: 0.85,
     stats: {
@@ -355,14 +357,16 @@ export const FIGHTERS: FighterConfig[] = [
       airControl: 1.15, gravityMul: 0.95,
     },
     appearance: {
-      skin: '#f7d8bb',
+      skin: '#cd9b6d',
       hair: '#101014',
       hairStyle: 'medium',
       eyes: '#6b4423',
       shirt: '#15161c',
+      sleeves: 'short',
       pants: '#22242e',
       shoes: '#0e0f14',
       build: 'lean',
+      // Taller than average, but Jovan still towers over him.
       stature: 'tall',
       // A long coat a shade warmer than the shirt, so the silhouette layers
       // instead of reading as one black block.
@@ -376,7 +380,7 @@ export const FIGHTERS: FighterConfig[] = [
     attacks: {
       light: makeAttack('light', {
         name: 'Lance Jab',
-        description: 'A long, straight-armed poke that out-ranges most jabs.',
+        description: 'A long, straight-armed poke that out-ranges most jabs — and pops foes off the floor.',
         startup: 0.07,
         reach: 1.45,
       }),
@@ -401,7 +405,7 @@ export const FIGHTERS: FighterConfig[] = [
       ultimate: makeAttack('ultimate', {
         name: 'Skyfall',
         description:
-          'Emir leaps and rakes the entire sky — every airborne opponent is struck down wherever they are, however far away. Keep your feet on the ground or be hunted.',
+          'Emir leaps and rakes the entire sky — every airborne opponent is struck down wherever they are, however far away, and the sweep still crushes anyone standing in front of him.',
         damage: 24,
         skyhunt: true,
         startup: 0.3,

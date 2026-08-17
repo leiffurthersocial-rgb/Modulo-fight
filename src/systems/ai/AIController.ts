@@ -10,7 +10,8 @@
 import type { ArenaConfig, Difficulty } from '@/core/types';
 import { clamp, dist } from '@/core/math';
 import { emptyInput, type InputFrame } from '@/systems/input/InputState';
-import { nearestGround } from '@/systems/physics/PhysicsSystem';
+import { FIGHTER_HALF_HEIGHT } from '@/core/constants';
+import { nearestGround, standingPlatform } from '@/systems/physics/PhysicsSystem';
 import { effectiveReach, type FighterRuntime } from '@/systems/simulation/FighterRuntime';
 
 interface Profile {
@@ -31,7 +32,16 @@ const PROFILES: Record<Exclude<Difficulty, 'human'>, Profile> = {
   normal: { decisionInterval: 0.32, aggression: 0.6, reaction: 0.3, tech: 0.7, abilityUse: 0.45 },
   hard: { decisionInterval: 0.2, aggression: 0.78, reaction: 0.55, tech: 0.9, abilityUse: 0.65 },
   insane: { decisionInterval: 0.1, aggression: 0.9, reaction: 0.8, tech: 1, abilityUse: 0.85 },
+  // Nightmare: re-decides almost every frame, dodges nearly everything it sees
+  // coming, and never wastes a cooldown. Still strictly input-driven — it reads
+  // the same state a player can see and presses the same buttons.
+  nightmare: {
+    decisionInterval: 0.05, aggression: 0.97, reaction: 0.96, tech: 1, abilityUse: 0.97,
+  },
 };
+
+/** Difficulty tiers that play a tighter spacing/punish game than the rest. */
+const EXPERT: ReadonlySet<Difficulty> = new Set<Difficulty>(['nightmare']);
 
 interface AIMemory {
   timer: number;
@@ -39,7 +49,18 @@ interface AIMemory {
   moveDir: number;
   /** Chosen target id for this window. */
   targetId: string | null;
+  /**
+   * Seconds spent standing on a floating platform while the target is on a
+   * different level. Drives the anti-camp descent below.
+   */
+  perchTime: number;
 }
+
+/**
+ * How long a bot may stand on a floating platform away from its target before
+ * it is forced to come down and fight.
+ */
+const MAX_PERCH_TIME = 1.6;
 
 export class AIController {
   private memory = new Map<string, AIMemory>();
@@ -61,7 +82,7 @@ export class AIController {
     const profile = PROFILES[self.difficulty];
     let mem = this.memory.get(self.config.id);
     if (!mem) {
-      mem = { timer: 0, moveDir: 0, targetId: null };
+      mem = { timer: 0, moveDir: 0, targetId: null, perchTime: 0 };
       this.memory.set(self.config.id, mem);
     }
 
@@ -100,6 +121,8 @@ export class AIController {
     // --- React to the target's ULTIMATE (the biggest threat) ----------------
     // Each ultimate type demands a different escape, and the AI knows which:
     //   • quake (Leonidas) — only the airborne survive, so JUMP;
+    //   • sky-hunt (Emir) — the ground is safer, so never jump; back off and
+    //     dodge, since the sweep still hits grounded foes within reach;
     //   • pierces-invuln (Jovan) — a dodge won't work, so RUN out of range;
     //   • anything else — dodge-roll through it.
     // Reaction quality scales with difficulty, so easy bots still eat ults.
@@ -114,10 +137,12 @@ export class AIController {
         return input;
       }
       if (data.skyhunt) {
-        // The mirror of the quake: only the grounded survive. Airborne bots
-        // have nothing to hide behind but a dodge; grounded bots must resist
-        // the usual urge to jump and simply back away.
-        if (!self.grounded && Math.random() < profile.tech * dt * 30) input.dodge = true;
+        // Inverse of the quake: the ground is the safe place, so resist the
+        // usual urge to jump. Being airborne is unsurvivable at any distance,
+        // and even grounded the sweep reaches — so dodge in both cases, and
+        // put distance between us either way.
+        const threatened = !self.grounded || gap < effectiveReach(target, data) + 1.5;
+        if (threatened && Math.random() < profile.tech * dt * 30) input.dodge = true;
         input.moveX = -desiredFacing;
         return input;
       }
@@ -142,12 +167,41 @@ export class AIController {
       return input;
     }
 
+    // --- Never camp on a floating platform ----------------------------------
+    // Left alone, a bot parked on a top tile would stand there indefinitely:
+    // with the target below it, horizontal distance is ~0, so the movement
+    // decision holds still and nothing else ever pulls it down. Track how long
+    // it has been perched away from its target and commit to a descent —
+    // dropping straight through a pass-through tile, or walking off a solid one.
+    const perch = standingPlatform(arena, self.pos.y - FIGHTER_HALF_HEIGHT, self.pos.x);
+    const onFloatingPlatform = !!perch && perch !== arena.platforms[0];
+    const sameLevel = Math.abs(dy) < 1.2;
+    if (onFloatingPlatform && !sameLevel) mem.perchTime += dt;
+    else mem.perchTime = 0;
+
+    if (onFloatingPlatform && (dy < -1.2 || mem.perchTime > MAX_PERCH_TIME)) {
+      if (perch!.passThrough) {
+        input.moveY = -1; // drop through the tile
+        input.moveX = desiredFacing * 0.4;
+      } else {
+        input.moveX = desiredFacing; // walk off the solid tile's edge
+      }
+      mem.perchTime = 0;
+      return input;
+    }
+
     // --- Re-decide movement periodically -----------------------------------
     mem.timer -= dt;
     if (mem.timer <= 0) {
       mem.timer = profile.decisionInterval;
       if (horizontalDist > range) {
         mem.moveDir = desiredFacing;
+      } else if (EXPERT.has(self.difficulty)) {
+        // Expert spacing: hold at the tip of its own range, and only step back
+        // to bait when the target actually commits to a move. Walking backwards
+        // turns a fighter around (facing follows movement), so retreating on a
+        // whim would just feed the opponent whiffed pokes.
+        mem.moveDir = targetAttacking ? -desiredFacing * 0.5 : 0;
       } else {
         // Spacing: occasionally back off to bait, otherwise hold.
         mem.moveDir = Math.random() < 0.25 ? -desiredFacing * 0.6 : 0;
@@ -160,6 +214,21 @@ export class AIController {
     const edgeRight = arena.platforms[0].x + arena.platforms[0].width / 2;
     if (self.pos.x < edgeLeft + 0.6 && input.moveX < 0) input.moveX = 0;
     if (self.pos.x > edgeRight - 0.6 && input.moveX > 0) input.moveX = 0;
+
+    // --- Edgeguarding (expert tiers) ---------------------------------------
+    // A recovering opponent is at their most vulnerable. Expert bots step out to
+    // cover the ledge instead of politely waiting at centre stage.
+    if (EXPERT.has(self.difficulty) && self.grounded) {
+      const targetOffStage = !nearestGround(arena, target.pos.x) || target.pos.y < mainTop - 1;
+      if (targetOffStage) {
+        const ledge = target.pos.x < stageCentreX ? edgeLeft + 1 : edgeRight - 1;
+        input.moveX = Math.abs(self.pos.x - ledge) > 0.5 ? Math.sign(ledge - self.pos.x) : 0;
+        if (gap < range + 1.5 && Math.random() < profile.aggression * dt * 14) {
+          input.heavy = true;
+        }
+        return input;
+      }
+    }
 
     // Sprint to close large gaps, and dash to burst-close medium ones (only
     // when already facing the target so the dash goes the right way; the

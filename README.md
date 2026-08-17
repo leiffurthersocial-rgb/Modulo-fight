@@ -33,15 +33,19 @@ percentage, and send them flying past the blast zone. Built to run smoothly at
   Glorious Strike curses its victim with +100% damage but no launch,
   Leonidas's Earthquake erupts every grounded opponent stage-wide, Erim's
   Laser Barrage fires a volley of real projectiles, Emir's Skyfall rakes the
-  whole sky and strikes down every *airborne* opponent at any distance (the
-  exact mirror of the Earthquake — stay grounded or be hunted), Till's Sky Storm
+  whole sky and strikes down every *airborne* opponent at any distance while its
+  sweep still crushes anyone in front of him, Till's Sky Storm
   spirals upward carrying anyone he clips, Lenni's Kloten Kick is a leaping
   shockwave dive, and Tusya's Meteor Smash spikes foes into the ground.
 - **Dynamic arena camera** — Smash-style auto-zoom that always keeps every
   fighter framed, with cinematic smoothing and impact shake.
-- **Human-like AI** — four difficulty tiers (Easy → Insane) that approach,
-  space, dodge, combo, recover from off-stage, use specials/ultimates and switch
-  targets.
+- **Human-like AI** — five difficulty tiers (Easy → **Nightmare**) that
+  approach, space, dodge, combo, recover from off-stage, use specials/ultimates
+  and switch targets. Bots never camp on a floating platform: standing on a top
+  tile away from their target forces a descent (dropping straight through
+  pass-through tiles). Nightmare adds frame-tight reactions, whiff-punish
+  spacing and active ledge-guarding of a recovering opponent — all while
+  pressing the same buttons a player can, with no input cheating.
 - **Game modes** — 1v1 Versus, endless Survive, and Practice (see
   `docs/NEW_MODES.md` for planned additions).
 - **Eight richly decorated arenas** — Sky Temple (flickering braziers), Volcano

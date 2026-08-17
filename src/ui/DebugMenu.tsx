@@ -78,7 +78,7 @@ const BEHAVIORS: { id: TrainingBehavior; label: string }[] = [
   { id: 'dodge', label: 'Dodge' },
 ];
 
-const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'insane'];
+const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'insane', 'nightmare'];
 
 export function DebugMenu({ sim, onClose }: Props) {
   const d = useDebug();

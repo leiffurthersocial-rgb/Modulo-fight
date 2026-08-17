@@ -40,8 +40,12 @@ export type FighterState =
 /** The four attack categories every fighter shares. */
 export type AttackKind = 'light' | 'heavy' | 'special' | 'ultimate';
 
-/** AI skill tiers. `human` marks a fighter driven by the local player. */
-export type Difficulty = 'human' | 'easy' | 'normal' | 'hard' | 'insane';
+/**
+ * AI skill tiers, ascending. `human` marks a fighter driven by the local
+ * player. `nightmare` sits above Insane: a frame-tight bot that still plays by
+ * the same input rules as everyone else.
+ */
+export type Difficulty = 'human' | 'easy' | 'normal' | 'hard' | 'insane' | 'nightmare';
 
 /** Supported game modes. */
 export type GameMode = 'practice' | '1v1' | 'survive';
@@ -204,7 +208,7 @@ export interface FighterAppearance {
    * fighter can read as tall and long-limbed at a glance. Purely cosmetic: the
    * hurtbox is a shared constant, exactly like `build` leaves the width alone.
    */
-  stature?: 'short' | 'normal' | 'tall';
+  stature?: 'short' | 'normal' | 'tall' | 'towering';
   /** Optional headband colour (worn across the forehead). */
   headband?: string;
   /** Optional scarf colour (worn around the neck). */
@@ -221,6 +225,11 @@ export interface FighterAppearance {
   kneePads?: string;
   /** Optional forearm wrap colour (fighter's tape wound up the forearms). */
   armWraps?: string;
+  /**
+   * Sleeve length (defaults to 'long'). 'short' cuts the sleeve to a cap at the
+   * shoulder and leaves the rest of the arm bare — a t-shirt.
+   */
+  sleeves?: 'long' | 'short';
   /** Optional glowing chest pendant (accent-coloured, emissive). */
   pendant?: boolean;
   /** Optional royal crown worn on the head (gold band, prongs and jewels). */

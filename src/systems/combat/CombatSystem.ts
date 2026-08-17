@@ -25,6 +25,14 @@ import {
 } from '@/systems/simulation/FighterRuntime';
 
 /**
+ * Upward velocity Emir's `aerialHunter` lift guarantees on a grounded victim.
+ * Tuned so the pop outlasts his own jab cycle (~0.38s from one hit to the next
+ * connecting), which is what lets his ground game flow into the airborne bonus
+ * instead of needing the opponent to already be in the air.
+ */
+const AERIAL_HUNTER_LIFT = 11;
+
+/**
  * True when the victim is protected from this hit by invulnerability. A move
  * flagged `piercesInvuln` cuts through *dodge* invulnerability (short windows,
  * ≤ 0.4s) so it can't be rolled through — but never through the long spawn
@@ -139,9 +147,11 @@ export function resolveAttackHits(
     return; // The quake IS the hitbox — skip the melee capsule.
   }
 
-  // Sky-hunt ultimates (Emir's Skyfall) are the exact mirror: they rake the
-  // whole sky, striking every *airborne* opponent at any distance. Staying
-  // grounded is the only way out.
+  // Sky-hunt ultimates (Emir's Skyfall) rake the whole sky, striking every
+  // *airborne* opponent at any distance. Unlike the quake this does NOT replace
+  // the melee capsule: the sweep still connects normally with anyone standing in
+  // front of him, so the move is a stage-wide anti-air *and* an ordinary
+  // finisher rather than a total whiff against a grounded opponent.
   if (attack.data.skyhunt) {
     for (const victim of others) {
       if (victim === attacker || victim.eliminated || victim.respawnTimer > 0) continue;
@@ -150,7 +160,7 @@ export function resolveAttackHits(
       attack.hitLog.set(victim.config.id, attack.elapsed);
       applyHit(attacker, victim, attack.data, events);
     }
-    return; // The sky rake IS the hitbox — skip the melee capsule.
+    // Fall through to the melee capsule for grounded foes within reach.
   }
 
   const reach = effectiveReach(attacker, attack.data);
@@ -211,9 +221,14 @@ export function applyHit(
   const counterHit = attacker.config.passive === 'counterForce' && !!victim.attack;
   if (counterHit) damage *= 1.2;
   // Emir: an opponent with no ground under them is prey — juggles and
-  // edgeguards bite harder (bonus knockback applied below too).
-  const airborneHit = attacker.config.passive === 'aerialHunter' && !victim.grounded;
+  // edgeguards bite harder (bonus knockback applied below too). The flip side,
+  // applied further down, is that his normals scoop a *grounded* foe off their
+  // feet, so he manufactures the airborne state instead of waiting for it.
+  const aerialHunter = attacker.config.passive === 'aerialHunter';
+  const airborneHit = aerialHunter && !victim.grounded;
   if (airborneHit) damage *= 1.18;
+  const liftsVictim =
+    aerialHunter && victim.grounded && (attack.kind === 'light' || attack.kind === 'heavy');
 
   victim.damage = clamp(victim.damage + damage, 0, 999);
   // Lifetime stats for post-match balance data — never reset by respawn.
@@ -297,6 +312,11 @@ export function applyHit(
   const angle = attack.angle;
   victim.vel.x = attacker.facing * Math.cos(angle) * kb;
   victim.vel.y = Math.sin(angle) * kb;
+
+  // Emir's lift: a grounded victim of his normals is scooped off their feet.
+  // `max` means this only ever *adds* height to a weak pop — a strong launch
+  // that already sends them higher is left exactly as it was.
+  if (liftsVictim) victim.vel.y = Math.max(victim.vel.y, AERIAL_HUNTER_LIFT);
 
   // --- Hitstun -----------------------------------------------------------
   let hitstun = kb * HITSTUN_PER_KNOCKBACK * attack.hitstun;

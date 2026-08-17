@@ -33,7 +33,9 @@ export function surviveDifficulty(wave: number): Difficulty {
   if (wave <= 2) return 'easy';
   if (wave <= 5) return 'normal';
   if (wave <= 9) return 'hard';
-  return 'insane';
+  if (wave <= 14) return 'insane';
+  // Deep runs graduate to the top tier — a real wall to end the gauntlet on.
+  return 'nightmare';
 }
 
 function randomOpponent(excludeId: string): string {

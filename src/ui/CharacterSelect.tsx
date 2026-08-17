@@ -17,7 +17,7 @@ import { audioManager } from '@/systems/audio/AudioManager';
 import { StatBars } from './StatBars';
 import { ControlsCard } from './Controls';
 
-const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'insane'];
+const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'insane', 'nightmare'];
 
 /** Bucket a fighter's ultimate charge rate into a readable tier. */
 function ultChargeTier(rate = 1): 'slow' | 'normal' | 'fast' {
